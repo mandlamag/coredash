@@ -51,15 +51,13 @@ export const setWelcomeScreenOpen = (open: boolean) => ({
 });
 export const SET_CONNECTION_PROPERTIES = 'APPLICATION/SET_CONNECTION_PROPERTIES';
 export const setConnectionProperties = (
-  protocol: string,
-  url: string,
-  port: string,
-  database: string,
-  username: string,
-  password: string
+  apiEndpoint: string,
+  apiKey: string,
+  authToken: string,
+  database: string
 ) => ({
   type: SET_CONNECTION_PROPERTIES,
-  payload: { protocol, url, port, database, username, password },
+  payload: { apiEndpoint, apiKey, authToken, database },
 });
 
 export const SET_BASIC_CONNECTION_PROPERTIES = 'APPLICATION/SET_BASIC_CONNECTION_PROPERTIES';
@@ -77,15 +75,13 @@ export const setBasicConnectionProperties = (
 
 export const SET_DESKTOP_CONNECTION_PROPERTIES = 'APPLICATION/SET_DESKTOP_CONNECTION_PROPERTIES';
 export const setDesktopConnectionProperties = (
-  protocol: string,
-  url: string,
-  port: string,
-  database: string,
-  username: string,
-  password: string
+  apiEndpoint: string,
+  apiKey: string,
+  authToken: string,
+  database: string
 ) => ({
   type: SET_DESKTOP_CONNECTION_PROPERTIES,
-  payload: { protocol, url, port, database, username, password },
+  payload: { apiEndpoint, apiKey, authToken, database },
 });
 
 export const CLEAR_DESKTOP_CONNECTION_PROPERTIES = 'APPLICATION/CLEAR_DESKTOP_CONNECTION_PROPERTIES';
@@ -113,12 +109,10 @@ export const setShareDetailsFromUrl = (
   type: string,
   id: string,
   standalone: boolean,
-  protocol: string,
-  url: string,
-  port: string,
+  apiEndpoint: string,
+  apiKey: string,
+  authToken: string,
   database: string,
-  username: string,
-  password: string,
   dashboardDatabase: string,
   skipConfirmation: boolean
 ) => ({
@@ -127,12 +121,10 @@ export const setShareDetailsFromUrl = (
     type,
     id,
     standalone,
-    protocol,
-    url,
-    port,
+    apiEndpoint,
+    apiKey,
+    authToken,
     database,
-    username,
-    password,
     dashboardDatabase,
     skipConfirmation,
   },

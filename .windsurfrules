@@ -1,0 +1,78 @@
+## Global Rules for NeoDash GraphQL API Integration
+
+These rules are specifically designed to guide Windsurf in modifying the project to replace its direct database connection with a GraphQL API client layer, as detailed in `PLANNING.md` and `TASKS.md`. **Strict adherence is required.**
+
+## 1. Project Context & Task Adherence (Start Here!)
+
+- **Primacy of Planning:** **`PLANNING.md` is the absolute source of truth** for architecture, goals, scope, technology choices, API contract assumptions, and constraints for this project. **Read and internalize it first.** Any ambiguity must be resolved by referring back to `PLANNING.md`.
+- **Task-Driven Execution:** **Strictly follow `TASKS.md`.** Only perform actions directly related to the *current* task being addressed. Do not jump ahead or perform unrelated refactoring. If a necessary step seems missing from `TASKS.md`, state this clearly and request guidance *before* proceeding.
+- **Verify Task Scope:** Before modifying any file, confirm the changes align with the specific task from `TASKS.md` you are currently working on.
+- **Follow Established Patterns:** Use **consistent naming conventions, file structure (`src/components`, `src/hooks`, `src/services`, `src/context`, etc.), and architectural patterns** already present in the NeoDash codebase *unless* `PLANNING.md` explicitly requires a change (like introducing the new GraphQL service layer).
+- **Ask Before Deviating:** If unsure about requirements, the assumed GraphQL API contract details, NeoDash's existing logic, or the best way to integrate the new service layer according to `PLANNING.md`, **ask for clarification** *before* generating or modifying code. Do not invent solutions outside the plan.
+
+## 2. Structure & Organization (NeoDash Context)
+
+- **Adhere to NeoDash Structure:** Work within the existing NeoDash React application structure (`src/`, `public/`, etc.). Do not introduce monorepo structures (`apps/`, `packages/`).
+- **Clear Module Responsibility:** Ensure new code (especially the GraphQL service layer) has a clear, single responsibility as outlined in `PLANNING.md`. Place new files in appropriate directories (e.g., `src/services/GraphQLApiService.ts`, `src/hooks/useGraphQLApi.ts`).
+- **Component/Module Documentation:** Briefly document the purpose of significant new modules or complex components via JSDoc or comments.
+- **Module Boundaries:** Respect existing module boundaries. Do not create unnecessary coupling between unrelated parts of the application. Use imports carefully.
+
+## 3. Dependency Management (yarn)
+
+- **Use Yarn:** Manage dependencies using `yarn add`, `yarn remove`. Update the `package.json` and `yarn.lock` file accordingly.
+- **Explicit Dependencies:** Only add dependencies explicitly required for the GraphQL client integration (e.g., a GraphQL client library like `graphql-request` or using native `fetch`).
+- **Minimize New Dependencies:** Prefer using existing capabilities or native browser APIs (`fetch`) where feasible, unless a library significantly simplifies GraphQL interaction as per standard practices.
+- **Audit Dependencies:** Be mindful of security (`yarn audit`).
+
+## 4. Development Workflow & Scripts
+
+- **Use Existing Scripts:** Utilize the standard NeoDash scripts defined in `package.json` (e.g., `yarn start`, `yarn build`, `yarn test`, `yarn lint`).
+- **Run via Yarn:** Execute scripts using `yarn <script_name>`.
+- **Focus Task Execution:** When possible, run linters or tests focused on the files/modules being changed.
+
+## 5. Code Quality & Style (React/TypeScript Focus)
+
+- **Language:** All new code MUST be TypeScript. Modifications MUST maintain TypeScript standards.
+- **Strict Types:** Adhere to NeoDash's existing `tsconfig.json` settings (likely including `"strict": true`). Ensure strong typing for API interactions and data transformations.
+- **Linting & Formatting:** Strictly follow the ESLint and Prettier configurations established in the NeoDash project. Run `yarn lint` and `yarn format` (or equivalent scripts) after making changes.
+- **Naming Conventions:**
+    - `camelCase` for variables, functions, object properties, non-component filenames (`graphQLApiService.ts`).
+    - `PascalCase` for React components, classes, interfaces, types, enums, component filenames (`ConnectionModal.tsx`).
+    - `UPPER_SNAKE_CASE` for constants.
+- **Modularity:** Keep files and functions focused; the new GraphQL service layer should encapsulate API interaction logic.
+- **Error Handling:** Implement robust `try...catch` for synchronous code and Promise rejections (`.catch()` or `async/await` with `try/catch`) specifically for API calls. Handle both network errors and GraphQL API errors (e.g., `errors` array in the response).
+- **Async/Await:** Strongly prefer `async/await` for asynchronous operations like API calls.
+- **Constants:** Define constants for GraphQL query strings or API-related configuration keys where appropriate, likely within the new service module. Avoid magic strings.
+- **Comments:** Explain the *why* for complex logic, especially around data mapping between the GraphQL response and the format NeoDash expects. Add `# Reason:` comments for non-obvious choices mandated by `PLANNING.md` or API constraints.
+
+## 6. Version Control (Git)
+
+- **Branching Strategy:** Assume work is done on a feature branch checked out from the main development branch (e.g., `main` or `master`).
+- **Commit Messages:** Use **Conventional Commits** format (`feat:`, `fix:`, `refactor:`, `chore:`, `docs:`). Ensure messages are concise and directly relate to the completed task from `TASKS.md`. Example: `feat(API): Implement executeQuery function in GraphQLApiService`.
+- **Small, Atomic Commits:** Commit related changes together, ideally corresponding to logical steps within a task from `TASKS.md`.
+- **`.gitignore` Management:** Ensure build artifacts (`build/`), environment files (`.env*`), and editor/OS files (`.DS_Store`, `.vscode/`) are ignored. Do not commit sensitive information like API keys.
+
+## 7. Testing
+
+- **Follow Planning:** Implement tests as specified in the `PLANNING.md` Testing Strategy section (Unit tests for the service, Integration tests with mock API, E2E).
+- **Unit Tests:** Write unit tests (using Jest/React Testing Library as found in the project) for the new `GraphQLApiService` / hooks, mocking the GraphQL client/`fetch` responses to cover success, error, and data transformation cases.
+- **Test Location:** Place test files (`*.test.ts`, `*.spec.ts`, `*.test.tsx`, `*.spec.tsx`) adjacent to the code they test or in a relevant `__tests__` directory, following existing project conventions.
+- **Execution:** Ensure tests pass (`yarn test`) before considering a task complete.
+- **Maintainability:** Write clear, concise, and reliable tests.
+
+## 8. 📚 Documentation & Explainability
+
+- **Update README:** If changes affect setup or core functionality described in `README.md` (like connection), note the need for updates.
+- **Code Comments:** Add JSDoc comments to new functions/modules explaining their purpose, parameters, and return values. Comment complex or non-obvious code sections, especially data mapping logic.
+
+## 9. 🧠 AI Behavior Rules (Strict Adherence Required)
+
+- **No Assumptions:** **Never assume missing context.** If `PLANNING.md` or `TASKS.md` are unclear, or if NeoDash code behavior is ambiguous, **ask for clarification.**
+- **Grounded in Reality:** **Never hallucinate libraries, functions, file paths, or module names.** Verify imports, file locations, and function signatures against the actual NeoDash codebase and the defined plan. Only use dependencies explicitly added or already present.
+- **API Contract is King:** **Strictly adhere to the assumed GraphQL API Schema defined in `PLANNING.md`**. Do not invent API endpoints or change the expected request/response structure. The task is to make NeoDash *consume* this API.
+- **Focus on Frontend:** **You are modifying the NeoDash frontend application ONLY.** Do *not* generate code for the backend GraphQL API server itself. Your scope is limited to the client-side integration.
+- **Preserve Existing Logic:** **Do not modify core NeoDash logic (report rendering, state management patterns) unless absolutely necessary** to adapt to the new data fetching mechanism or the API response format, as guided by `PLANNING.md`. Prioritize adapting the *data access* part, not rewriting unrelated features.
+- **Modify, Don't Overwrite:** **Never delete or overwrite significant chunks of existing code** unless it's a direct replacement of the old driver logic with the new service logic, as planned in `TASKS.md`. Be surgical in your changes.
+- **Confirm File Paths:** Before stating you will modify a file, **double-check the file path exists** in the NeoDash repository structure.
+
+---

@@ -58,12 +58,18 @@ const initialState = {
   draft: false,
   aboutModalOpen: false,
   connection: {
-    protocol: 'neo4j+s',
-    url: DEFAULT_NEO4J_URL,
-    port: '7687',
+    // GraphQL API connection properties
+    apiEndpoint: '',
+    apiKey: '',
+    authToken: '',
+    // Keep database for compatibility
     database: '',
-    username: 'neo4j',
-    password: '',
+  },
+  // Keep track of connection status
+  connectionStatus: {
+    connected: false,
+    connecting: false,
+    error: null,
   },
   shareDetails: undefined,
   desktopConnection: null,
@@ -246,15 +252,13 @@ export const applicationReducer = (state = initialState, action: { type: any; pa
       return state;
     }
     case SET_CONNECTION_PROPERTIES: {
-      const { protocol, url, port, database, username, password } = payload;
+      const { apiEndpoint, apiKey, authToken, database } = payload;
       state = update(state, {
         connection: {
-          protocol: protocol,
-          url: url,
-          port: port,
+          apiEndpoint: apiEndpoint,
+          apiKey: apiKey,
+          authToken: authToken,
           database: database,
-          username: username,
-          password: password,
         },
       });
       return state;
@@ -264,15 +268,13 @@ export const applicationReducer = (state = initialState, action: { type: any; pa
       return state;
     }
     case SET_DESKTOP_CONNECTION_PROPERTIES: {
-      const { protocol, url, port, database, username, password } = payload;
+      const { apiEndpoint, apiKey, authToken, database } = payload;
       state = update(state, {
         desktopConnection: {
-          protocol: protocol,
-          url: url,
-          port: port,
+          apiEndpoint: apiEndpoint,
+          apiKey: apiKey,
+          authToken: authToken,
           database: database,
-          username: username,
-          password: password,
         },
       });
       return state;
@@ -291,12 +293,10 @@ export const applicationReducer = (state = initialState, action: { type: any; pa
         type,
         id,
         standalone,
-        protocol,
-        url,
-        port,
+        apiEndpoint,
+        apiKey,
+        authToken,
         database,
-        username,
-        password,
         dashboardDatabase,
         skipConfirmation,
       } = payload;
@@ -305,12 +305,10 @@ export const applicationReducer = (state = initialState, action: { type: any; pa
           type: type,
           id: id,
           standalone: standalone,
-          protocol: protocol,
-          url: url,
-          port: port,
+          apiEndpoint: apiEndpoint,
+          apiKey: apiKey,
+          authToken: authToken,
           database: database,
-          username: username,
-          password: password,
           dashboardDatabase: dashboardDatabase,
           skipConfirmation: skipConfirmation,
         },

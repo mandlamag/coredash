@@ -2,8 +2,9 @@ import React, { useEffect } from 'react';
 import { SSOLoginButton } from '../component/sso/SSOLoginButton';
 import { Button, Dialog, Switch, TextInput, Dropdown, TextLink, IconButton } from '@neo4j-ndl/react';
 import { PlayIconOutline, ArrowLeftIconOutline } from '@neo4j-ndl/react/icons';
+
 /**
- * Configures setting the current Neo4j database connection for the dashboard.
+ * Configures setting the current GraphQL API connection for the dashboard.
  */
 export default function NeoConnectionModal({
   connected,
@@ -19,22 +20,17 @@ export default function NeoConnectionModal({
   onSSOAttempt,
   setWelcomeScreenOpen,
 }) {
-  const protocols = ['neo4j', 'neo4j+s', 'neo4j+ssc', 'bolt', 'bolt+s', 'bolt+ssc'];
   const [ssoVisible, setSsoVisible] = React.useState(ssoSettings.ssoEnabled);
-  const [protocol, setProtocol] = React.useState(connection.protocol);
-  const [url, setUrl] = React.useState(connection.url);
-  const [port, setPort] = React.useState(connection.port);
-  const [username, setUsername] = React.useState(connection.username);
-  const [password, setPassword] = React.useState(connection.password);
+  const [apiEndpoint, setApiEndpoint] = React.useState(connection.apiEndpoint);
+  const [apiKey, setApiKey] = React.useState(connection.apiKey);
+  const [authToken, setAuthToken] = React.useState(connection.authToken);
   const [database, setDatabase] = React.useState(connection.database);
 
   // Make sure local vars are updated on external connection updates.
   useEffect(() => {
-    setProtocol(connection.protocol);
-    setUrl(connection.url);
-    setUsername(connection.username);
-    setPassword(connection.password);
-    setPort(connection.port);
+    setApiEndpoint(connection.apiEndpoint);
+    setApiKey(connection.apiKey);
+    setAuthToken(connection.authToken);
     setDatabase(connection.database);
   }, [JSON.stringify(connection)]);
 
@@ -68,89 +64,48 @@ export default function NeoConnectionModal({
         aria-labelledby='form-dialog-title'
         disableCloseButton={!dismissable}
       >
-        <Dialog.Header id='form-dialog-title'>{standalone ? 'Connect to Dashboard' : 'Connect to Neo4j'}</Dialog.Header>
+        <Dialog.Header id='form-dialog-title'>{standalone ? 'Connect to Dashboard' : 'Connect to GraphQL API'}</Dialog.Header>
         <Dialog.Content className='n-flex n-flex-col n-gap-token-4'>
-          <div className='n-flex n-flex-row n-flex-wrap'>
-            <Dropdown
-              id='protocol'
-              label='Protocol'
-              type='select'
-              selectProps={{
-                isDisabled: standalone,
-                onChange: (newValue) => newValue && setProtocol(newValue.value),
-                options: protocols.map((option) => ({ label: option, value: option })),
-                value: { label: protocol, value: protocol },
-              }}
-              style={{ width: '25%', display: 'inline-block' }}
-              fluid
-            />
-            <div style={{ marginLeft: '2.5%', width: '55%', marginRight: '2.5%', display: 'inline-block' }}>
+          {!standalone ? (
+            <div className='n-flex n-flex-col n-gap-token-4'>
               <TextInput
-                id='url'
-                value={url}
+                id='apiEndpoint'
+                value={apiEndpoint}
                 disabled={standalone}
-                onChange={(e) => {
-                  // Help the user here a bit by extracting the hostname if they copy paste things in
-                  const input = e.target.value;
-                  const splitted = input.split('://');
-                  const host = splitted[splitted.length - 1].split(':')[0].split('/')[0];
-                  setUrl(host);
-                }}
-                label='Hostname'
-                placeholder='localhost'
+                onChange={(e) => setApiEndpoint(e.target.value)}
+                label='GraphQL API Endpoint'
+                placeholder='https://api.example.com/graphql'
                 autoFocus
                 fluid
               />
-            </div>
-            <div style={{ width: '15%', display: 'inline-block' }}>
               <TextInput
-                id='port'
-                value={port}
+                id='apiKey'
+                value={apiKey}
                 disabled={standalone}
-                onChange={(event) => {
-                  if (event.target.value.toString().length == 0) {
-                    setPort(event.target.value);
-                  } else if (!isNaN(event.target.value)) {
-                    setPort(Number(event.target.value));
-                  }
-                }}
-                label='Port'
-                placeholder='7687'
+                onChange={(e) => setApiKey(e.target.value)}
+                label='API Key (Optional)'
+                placeholder='your-api-key'
+                fluid
+              />
+              <TextInput
+                id='authToken'
+                value={authToken}
+                disabled={standalone}
+                onChange={(e) => setAuthToken(e.target.value)}
+                label='Auth Token (Optional)'
+                placeholder='Bearer token'
+                type='password'
+                fluid
+              />
+              <TextInput
+                id='database'
+                value={database}
+                onChange={(e) => setDatabase(e.target.value)}
+                label='Database (Optional)'
+                placeholder='neo4j'
                 fluid
               />
             </div>
-          </div>
-
-          {window.location.href.startsWith('https') && !(protocol.endsWith('+s') || protocol.endsWith('+scc')) ? (
-            <div>
-              You're running NeoDash from a secure (https) webpage. You can't connect to a Neo4j database with an
-              unencrypted protocol. Change the protocol, or use NeoDash using http instead: &nbsp;
-              <TextLink href={window.location.href.replace('https://', 'http://')}>
-                {window.location.href.replace('https://', 'http://')}
-              </TextLink>
-              .
-            </div>
-          ) : null}
-          {url == 'localhost' && (protocol.endsWith('+s') || protocol.endsWith('+scc')) && (
-            <div>
-              A local host with an encrypted connection will likely not work - try an unencrypted protocol instead.
-            </div>
-          )}
-          {url.endsWith('neo4j.io') && !protocol.endsWith('+s') ? (
-            <div>
-              Neo4j Aura databases require a <code>neo4j+s</code> protocol. Your current configuration may not work.
-            </div>
-          ) : null}
-          {!standalone ? (
-            <TextInput
-              id='database'
-              value={database}
-              disabled={standalone}
-              onChange={(e) => setDatabase(e.target.value)}
-              label='Database (optional)'
-              placeholder='neo4j'
-              fluid
-            />
           ) : (
             <Dropdown
               id='database'
@@ -158,7 +113,9 @@ export default function NeoConnectionModal({
               type='select'
               selectProps={{
                 onChange: (newValue) => {
-                  setDatabase(newValue.value);
+                  if (newValue) {
+                    setDatabase(newValue.value);
+                  }
                 },
                 options: standaloneDatabaseList.map((option) => ({
                   label: option,
@@ -171,55 +128,35 @@ export default function NeoConnectionModal({
             ></Dropdown>
           )}
 
-          {!ssoVisible ? (
-            <TextInput
-              id='dbusername'
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              label='Username'
-              placeholder='neo4j'
-              fluid
-            />
-          ) : null}
+          {ssoSettings.ssoEnabled ? (
+            <div style={{ marginTop: 10 }}>
+              <Switch
+                label='Use SSO'
+                checked={ssoVisible}
+                onChange={() => setSsoVisible(!ssoVisible)}
+                style={{ marginLeft: '5px' }}
+              />
+            </div>
+          ) : (
+            <></>
+          )}
+
           <form
             onSubmit={(e) => {
               e.preventDefault();
               onConnectionModalClose();
-              createConnection(protocol, url, port, database, username, password);
+              createConnection(apiEndpoint, apiKey, authToken, database);
             }}
           >
-            {!ssoVisible ? (
-              <TextInput
-                id='dbpassword'
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                label='Password'
-                placeholder='neo4j'
-                type='password'
-                fluid
-              />
-            ) : null}
-            {ssoSettings.ssoEnabled ? (
-              <div style={{ marginTop: 10 }}>
-                <Switch
-                  label='Use SSO'
-                  checked={ssoVisible}
-                  onChange={() => setSsoVisible(!ssoVisible)}
-                  style={{ marginLeft: '5px' }}
-                />
-              </div>
-            ) : (
-              <></>
-            )}
             {ssoVisible ? (
               <SSOLoginButton
-                hostname={url}
-                port={port}
+                hostname={apiEndpoint}
+                port=""
                 discoveryAPIUrl={discoveryAPIUrl}
                 onSSOAttempt={onSSOAttempt}
                 onClick={() => {
                   // Remember credentials on click
-                  setConnectionProperties(protocol, url, port, database, '', '');
+                  setConnectionProperties(apiEndpoint, apiKey, '', database);
                 }}
                 providers={ssoSettings.ssoProviders}
               />
@@ -229,7 +166,7 @@ export default function NeoConnectionModal({
                 onClick={(e) => {
                   e.preventDefault();
                   onConnectionModalClose();
-                  createConnection(protocol, url, port, database, username, password);
+                  createConnection(apiEndpoint, apiKey, authToken, database);
                 }}
                 style={{ float: 'right', marginTop: '20px', marginBottom: '20px' }}
                 size='large'
@@ -253,24 +190,16 @@ export default function NeoConnectionModal({
             <div style={{ color: 'lightgrey' }}>
               {standaloneSettings.standaloneDashboardURL === '' ? (
                 <>
-                  Sign in to continue. You will be connected to Neo4j, and load a dashboard called&nbsp;
+                  Sign in to continue. You will be connected to the GraphQL API, and load a dashboard called&nbsp;
                   <b>{standaloneSettings.standaloneDashboardName}</b>.
                 </>
               ) : (
-                <> Sign in to continue. You will be connected to Neo4j, and load a dashboard.</>
+                <> Sign in to continue. You will be connected to the GraphQL API, and load a dashboard.</>
               )}
             </div>
           ) : (
             <div style={{ color: 'white' }}>
-              Enter your Neo4j database credentials to start. Don't have a Neo4j database yet? Create your own in&nbsp;
-              <TextLink externalLink className='n-text-neutral-text-inverse' href='https://neo4j.com/download/'>
-                Neo4j Desktop
-              </TextLink>
-              , or try the&nbsp;
-              <TextLink externalLink className='n-text-neutral-text-inverse' href='https://console.neo4j.io/'>
-                Neo4j Aura
-              </TextLink>
-              &nbsp;free tier.
+              Enter your GraphQL API endpoint and authentication details to start. The API should implement the required GraphQL schema for Neo4j data access.
             </div>
           )}
         </Dialog.Actions>

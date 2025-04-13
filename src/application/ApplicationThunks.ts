@@ -1,4 +1,4 @@
-import { createDriver } from 'use-neo4j';
+import { GraphQLClient } from 'graphql-request';
 import { initializeSSO } from '../component/sso/SSOUtils';
 import { DEFAULT_SCREEN, Screens } from '../config/ApplicationConfig';
 import { setDashboard } from '../dashboard/DashboardActions';
@@ -54,155 +54,159 @@ import { createUUID } from '../utils/uuid';
  */
 
 /**
- * Establish a connection to Neo4j with the specified credentials. Open/close the relevant windows when connection is made (un)successfully.
- * @param protocol - the neo4j protocol (e.g. bolt, bolt+s, neo4j+s, ...)
- * @param url - URL of the host.
- * @param port - port on which Neo4j is running.
- * @param database - the Neo4j database to connect to.
- * @param username - Neo4j username.
- * @param password - Neo4j password.
+ * Establish a connection to the GraphQL API with the specified credentials. Open/close the relevant windows when connection is made (un)successfully.
+ * @param apiEndpoint - URL of the GraphQL API endpoint.
+ * @param apiKey - API key for authentication (optional).
+ * @param authToken - Authentication token (optional).
+ * @param database - the Neo4j database to connect to (optional).
  */
 export const createConnectionThunk =
-  (protocol, url, port, database, username, password) => (dispatch: any, getState: any) => {
+  (apiEndpoint: string, apiKey: string, authToken: string, database: string) => (dispatch: any, getState: any) => {
     const loggingState = getState();
     const loggingSettings = applicationGetLoggingSettings(loggingState);
     const neodashMode = applicationIsStandalone(loggingState) ? 'Standalone' : 'Editor';
     try {
-      const driver = createDriver(protocol, url, port, username, password, { userAgent: `neodash/v${version}` });
-      // eslint-disable-next-line no-console
-      console.log('Attempting to connect...');
-      const validateConnection = (records) => {
-        // eslint-disable-next-line no-console
-        console.log('Confirming connection was established...');
-        if (records && records[0] && records[0].error) {
-          dispatch(createNotificationThunk('Unable to establish connection', records[0].error));
-          if (loggingSettings.loggingMode > '0') {
-            dispatch(
-              createLogThunk(
-                driver,
-                loggingSettings.loggingDatabase,
-                neodashMode,
-                username,
-                'ERR - connect to DB',
-                database,
-                '',
-                `Error while trying to establish connection to Neo4j DB in ${neodashMode} mode at ${Date(
-                  Date.now()
-                ).substring(0, 33)}`
-              )
-            );
-          }
-        } else if (records && records[0] && records[0].keys[0] == 'connected') {
-          dispatch(setConnectionProperties(protocol, url, port, database, username, password));
+      // Create a GraphQL client to test the connection
+      const headers: Record<string, string> = {};
+      
+      if (apiKey) {
+        headers['x-api-key'] = apiKey;
+      }
+      
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+      
+      if (database) {
+        headers['x-database'] = database;
+      }
+      
+      const client = new GraphQLClient(apiEndpoint, { headers });
+      
+      // Test query to verify connection
+      const testQuery = `query { __schema { queryType { name } } }`;
+      
+      // Execute the test query to verify connection
+      client.request(testQuery)
+        .then(() => {
+          // Connection successful
+          dispatch(setConnectionProperties(apiEndpoint, apiKey, authToken, database));
           dispatch(setConnectionModalOpen(false));
           dispatch(setConnected(true));
+          
           // An old dashboard (pre-2.3.5) may not always have a UUID. We catch this case here.
           dispatch(assignDashboardUuidIfNotPresentThunk());
-          dispatch(updateSessionParameterThunk('session_uri', `${protocol}://${url}:${port}`));
+          dispatch(updateSessionParameterThunk('session_uri', apiEndpoint));
           dispatch(updateSessionParameterThunk('session_database', database));
-          dispatch(updateSessionParameterThunk('session_username', username));
+          dispatch(updateSessionParameterThunk('session_api_key', apiKey));
+          
           if (loggingSettings.loggingMode > '0') {
-            dispatch(
-              createLogThunk(
-                driver,
-                loggingSettings.loggingDatabase,
-                neodashMode,
-                username,
-                'INF - connect to DB',
-                database,
-                '',
-                `${username} established connection to Neo4j DB in ${neodashMode} mode at ${Date(Date.now()).substring(
-                  0,
-                  33
-                )}`
-              )
-            );
+            // Log successful connection
+            console.log(`Established connection to GraphQL API in ${neodashMode} mode at ${Date(Date.now()).substring(0, 33)}`);
+            
+            if (loggingSettings.loggingMode === '2') {
+              dispatch(createLogThunk('Connection', 'Established connection to GraphQL API'));
+            }
           }
+          
+          // If we have logging enabled, set up the logging database.
+          if (loggingSettings.loggingMode) {
+            dispatch(setLoggingDatabase(database));
+          }
+          
           // If we have remembered to load a specific dashboard after connecting to the database, take care of it here.
           const { application } = getState();
           if (
             application.dashboardToLoadAfterConnecting &&
             (application.dashboardToLoadAfterConnecting.startsWith('http') ||
-              application.dashboardToLoadAfterConnecting.startsWith('./') ||
-              application.dashboardToLoadAfterConnecting.startsWith('/'))
+            application.dashboardToLoadAfterConnecting.startsWith('./') ||
+            application.dashboardToLoadAfterConnecting.startsWith('/'))
           ) {
             fetch(application.dashboardToLoadAfterConnecting)
               .then((response) => response.text())
-              .then((data) => dispatch(loadDashboardThunk(createUUID(), data)));
+              .then((data) => dispatch(loadDashboardThunk(data)));
             dispatch(setDashboardToLoadAfterConnecting(null));
           } else if (application.dashboardToLoadAfterConnecting) {
-            const setDashboardAfterLoadingFromDatabase = (value) => {
-              dispatch(loadDashboardThunk(createUUID(), value));
-            };
-
             // If we specify a dashboard by name, load the latest version of it.
             // If we specify a dashboard by UUID, load it directly.
             if (application.dashboardToLoadAfterConnecting.startsWith('name:')) {
-              dispatch(
-                loadDashboardFromNeo4jByNameThunk(
-                  driver,
-                  application.standaloneDashboardDatabase,
-                  application.dashboardToLoadAfterConnecting.substring(5),
-                  setDashboardAfterLoadingFromDatabase
-                )
-              );
+              // TODO: In Phase 2, update to use GraphQL API for loading dashboards
+              dispatch(loadDashboardFromNeo4jByNameThunk(application.dashboardToLoadAfterConnecting.substring(5)));
             } else {
-              dispatch(
-                loadDashboardFromNeo4jThunk(
-                  driver,
-                  application.standaloneDashboardDatabase,
-                  application.dashboardToLoadAfterConnecting,
-                  setDashboardAfterLoadingFromDatabase
-                )
-              );
+              // TODO: In Phase 2, update to use GraphQL API for loading dashboards
+              dispatch(loadDashboardFromNeo4jThunk(application.dashboardToLoadAfterConnecting));
             }
             dispatch(setDashboardToLoadAfterConnecting(null));
           }
-        } else {
-          dispatch(createNotificationThunk('Unknown Connection Error', 'Check the browser console.'));
-        }
-      };
-      const query = 'RETURN true as connected';
-      const parameters = {};
-      runCypherQuery(
-        driver,
-        database,
-        query,
-        parameters,
-        1,
-        () => {},
-        (records) => validateConnection(records)
-      );
+          
+          // If we have parameters to load after connecting, load them now
+          if (application.parametersToLoadAfterConnecting) {
+            dispatch(updateGlobalParametersThunk(application.parametersToLoadAfterConnecting));
+            dispatch(setParametersToLoadAfterConnecting(null));
+          }
+
+          // If we have a shared dashboard to load, load it now.
+          const shareDetails = application.shareDetails;
+          if (shareDetails) {
+            if (shareDetails.standalone) {
+              dispatch(setStandaloneMode(true));
+              dispatch(setStandaloneDashboardDatabase(shareDetails.dashboardDatabase));
+            }
+            if (shareDetails.type === 'create') {
+              dispatch(loadDashboardThunk(shareDetails.id));
+            } else {
+              // TODO: In Phase 2, update to use GraphQL API for loading dashboards
+              dispatch(loadDashboardFromNeo4jThunk(shareDetails.id));
+            }
+            dispatch(resetShareDetails());
+          }
+
+          // If we are in standalone mode, set the dashboard database.
+          if (application.standalone) {
+            dispatch(setStandaloneDashboardDatabase(database));
+          }
+        })
+        .catch((error) => {
+          // Connection failed
+          dispatch(createNotificationThunk('Unable to establish connection to GraphQL API', error.message || 'Check your connection details and try again.'));
+        });
     } catch (e) {
-      dispatch(createNotificationThunk('Unable to establish connection', e));
+      dispatch(createNotificationThunk('Unable to establish connection', e instanceof Error ? e.message : String(e)));
     }
   };
 
 /**
  * Establish a connection directly from the Neo4j Desktop integration (if running inside Neo4j Desktop)
+ * Note: This function is maintained for backward compatibility but will use GraphQL API instead
  */
 export const createConnectionFromDesktopIntegrationThunk = () => (dispatch: any, getState: any) => {
   try {
     const desktopConnectionDetails = getState().application.desktopConnection;
-    const { protocol, url, port, database, username, password } = desktopConnectionDetails;
-    dispatch(createConnectionThunk(protocol, url, port, database, username, password));
+    // Convert Neo4j Desktop connection to GraphQL API connection
+    const { apiEndpoint, apiKey, authToken, database } = desktopConnectionDetails;
+    dispatch(createConnectionThunk(apiEndpoint, apiKey, authToken, database));
   } catch (e) {
-    dispatch(createNotificationThunk('Unable to establish connection to Neo4j Desktop', e));
+    dispatch(createNotificationThunk('Unable to establish connection to GraphQL API', e instanceof Error ? e.message : String(e)));
   }
 };
 
 /**
  * Find the active database from Neo4j Desktop.
  * Set global state values to remember the values retrieved from the integration so that we can connect later if possible.
+ * Note: This function is maintained for backward compatibility but will use GraphQL API instead
  */
 export const setDatabaseFromNeo4jDesktopIntegrationThunk = () => (dispatch: any) => {
-  const getActiveDatabase = (context) => {
-    for (let pi = 0; pi < context.projects.length; pi++) {
-      let prj = context.projects[pi];
-      for (let gi = 0; gi < prj.graphs.length; gi++) {
-        let grf = prj.graphs[gi];
-        if (grf.status == 'ACTIVE') {
-          return grf;
+  const getActiveDatabase = (context: any) => {
+    if (context && context.projects) {
+      for (let pi = 0; pi < context.projects.length; pi++) {
+        const prj = context.projects[pi];
+        if (prj.graphs && prj.graphs.length > 0) {
+          for (let gi = 0; gi < prj.graphs.length; gi++) {
+            const grf = prj.graphs[gi];
+            if (grf.status === 'ACTIVE') {
+              return grf;
+            }
+          }
         }
       }
     }
@@ -210,24 +214,32 @@ export const setDatabaseFromNeo4jDesktopIntegrationThunk = () => (dispatch: any)
     return null;
   };
 
-  let promise = window.neo4jDesktopApi && window.neo4jDesktopApi.getContext();
-
-  if (promise) {
-    promise.then((context) => {
-      let neo4j = getActiveDatabase(context);
-      if (neo4j) {
-        dispatch(
-          setDesktopConnectionProperties(
-            neo4j.connection.configuration.protocols.bolt.url.split('://')[0],
-            neo4j.connection.configuration.protocols.bolt.url.split('://')[1].split(':')[0],
-            neo4j.connection.configuration.protocols.bolt.port,
-            undefined,
-            neo4j.connection.configuration.protocols.bolt.username,
-            neo4j.connection.configuration.protocols.bolt.password
-          )
-        );
-      }
-    });
+  try {
+    // This is kept for compatibility, but in practice we'll use GraphQL API
+    // instead of Neo4j Desktop integration
+    if ((window as any).neo4jDesktopApi) {
+      (window as any).neo4jDesktopApi.getContext().then((context: any) => {
+        try {
+          const activeGraph = getActiveDatabase(context);
+          if (activeGraph) {
+            // Convert Neo4j connection to GraphQL API connection
+            // In a real implementation, this would map Neo4j connection details to GraphQL API details
+            const apiEndpoint = 'https://graphql-api.example.com/graphql';
+            const apiKey = '';
+            const authToken = '';
+            const database = 'neo4j'; // Default to neo4j
+            
+            dispatch(setDesktopConnectionProperties(apiEndpoint, apiKey, authToken, database));
+          }
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.log(e);
+        }
+      });
+    }
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.log(e);
   }
 };
 
@@ -344,12 +356,10 @@ export const onConfirmLoadSharedDashboardThunk = () => (dispatch: any, getState:
     if (shareDetails.url) {
       dispatch(
         createConnectionThunk(
-          shareDetails.protocol,
-          shareDetails.url,
-          shareDetails.port,
-          shareDetails.database,
-          shareDetails.username,
-          shareDetails.password
+          shareDetails.apiEndpoint,
+          shareDetails.apiKey,
+          shareDetails.authToken,
+          shareDetails.database
         )
       );
     } else {
@@ -619,12 +629,10 @@ export const initializeApplicationAsStandaloneThunk =
     // If we are running in standalone mode, auto-set the connection details that are configured.
     dispatch(
       setConnectionProperties(
-        config.standaloneProtocol,
-        config.standaloneHost,
-        config.standalonePort,
-        config.standaloneDatabase,
-        config.standaloneUsername ? config.standaloneUsername : state.application.connection.username,
-        config.standalonePassword ? config.standalonePassword : state.application.connection.password
+        config.standaloneApiEndpoint,
+        config.standaloneApiKey,
+        config.standaloneAuthToken,
+        config.standaloneDatabase
       )
     );
 
@@ -643,16 +651,14 @@ export const initializeApplicationAsStandaloneThunk =
       dispatch(clearNotification());
     }
 
-    // Override for when username and password are specified in the config - automatically connect to the specified URL.
-    if (config.standaloneUsername && config.standalonePassword) {
+    // Override for when API credentials are specified in the config - automatically connect to the specified URL.
+    if (config.standaloneApiKey || config.standaloneAuthToken) {
       dispatch(
         createConnectionThunk(
-          config.standaloneProtocol,
-          config.standaloneHost,
-          config.standalonePort,
-          config.standaloneDatabase,
-          config.standaloneUsername,
-          config.standalonePassword
+          config.standaloneApiEndpoint,
+          config.standaloneApiKey,
+          config.standaloneAuthToken,
+          config.standaloneDatabase
         )
       );
     } else {

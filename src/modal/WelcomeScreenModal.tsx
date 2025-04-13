@@ -9,7 +9,7 @@ import {
 } from '@neo4j-ndl/react/icons';
 
 /**
- * Configures setting the current Neo4j database connection for the dashboard.
+ * Configures setting the current GraphQL API connection for the dashboard.
  */
 export const NeoWelcomeScreenModal = ({
   welcomeScreenOpen,
@@ -39,11 +39,11 @@ export const NeoWelcomeScreenModal = ({
     <div>
       <Dialog size='small' open={welcomeScreenOpen} aria-labelledby='form-dialog-title' disableCloseButton>
         <Dialog.Header id='form-dialog-title'>
-          NeoDash - Neo4j Dashboard Builder
+          NeoDash - GraphQL API Dashboard Builder
           <BoltIconSolid className='icon-base' color='gold' style={{ float: 'right' }} />
         </Dialog.Header>
         <Dialog.Content>
-          <Tooltip title='Connect to Neo4j and create a new dashboard.' aria-label='create' disableInteractive>
+          <Tooltip title='Connect to GraphQL API and create a new dashboard.' aria-label='create' disableInteractive>
             <Button
               onClick={() => {
                 if (hasCachedDashboard) {
@@ -153,7 +153,7 @@ export const NeoWelcomeScreenModal = ({
           }}
         >
           <div style={{ color: 'white' }}>
-            NeoDash is a tool for building standalone Neo4j dashboards. Need advice on building an integrated solution?{' '}
+            NeoDash is a tool for building dashboards using GraphQL API. Need advice on building an integrated solution?{' '}
             <TextLink
               href='https://neo4j.com/professional-services/'
               className='n-text-neutral-text-inverse'

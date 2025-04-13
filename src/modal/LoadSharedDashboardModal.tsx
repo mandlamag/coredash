@@ -4,8 +4,8 @@ import { Button, Dialog } from '@neo4j-ndl/react';
 import { PlayIconSolid, AdjustmentsVerticalIconOutline, BackspaceIconOutline } from '@neo4j-ndl/react/icons';
 
 /**
- * A modal to save a dashboard as a JSON text string.
- * The button to open the modal is intended to use in a drawer at the side of the page.
+ * A modal to load a shared dashboard via GraphQL API.
+ * This modal appears when a user attempts to load a dashboard from a shared link.
  */
 
 export const NeoLoadSharedDashboardModal = ({ shareDetails, onResetShareDetails, onConfirmLoadSharedDashboard }) => {
@@ -30,11 +30,11 @@ export const NeoLoadSharedDashboardModal = ({ shareDetails, onResetShareDetails,
         <Dialog.Content>
           {shareDetails !== undefined ? (
             <>
-              You are loading a Neo4j dashboard.
+              You are loading a dashboard via GraphQL API.
               <br />
               {shareDetails && shareDetails.url ? (
                 <>
-                  You will be connected to <b>{shareDetails && shareDetails.url}</b>.
+                  You will be connected to the GraphQL API at <b>{shareDetails && shareDetails.url}</b>.
                 </>
               ) : (
                 <>You will still need to specify a connection manually.</>
