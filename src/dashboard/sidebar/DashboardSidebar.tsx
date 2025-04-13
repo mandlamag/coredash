@@ -95,7 +95,8 @@ export const NeoDashboardSidebar = ({
   standaloneSettings,
 }) => {
   const { driver } = useContext<Neo4jContextState>(Neo4jContext);
-  const [expanded, setOnExpanded] = useState(false);
+  // Always keep sidebar collapsed
+  const expanded = false;
   const [selectedDashboardIndex, setSelectedDashboardIndex] = React.useState(UNSAVED_DASHBOARD_INDEX);
   const [dashboardDatabase, setDashboardDatabase] = React.useState(database ? database : 'neo4j');
   const [databases, setDatabases] = useState([]);

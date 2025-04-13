@@ -37,6 +37,7 @@ will look like this:
     "loggingMode": "0",
     "loggingDatabase": "logs",
     "customHeader": "",
+    "ALLOW_QUERIES_WITHOUT_LOGIN": false,
 }
 ....
 
@@ -143,6 +144,8 @@ will be created in this database.
 
 |customHeader |string |none |When set the dashboard header will display
 the prameter value as a fixed string, otherwise it will display the host 
+
+|ALLOW_QUERIES_WITHOUT_LOGIN |boolean |false |When enabled, allows users to run queries without providing authentication credentials. This adds a "Skip Login" button to the connection modal that connects to a default GraphQL API endpoint. This is particularly useful for development and testing scenarios.
 and port of current connection.
 |===
 

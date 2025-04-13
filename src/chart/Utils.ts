@@ -1,5 +1,5 @@
 import { tokens } from '@neo4j-ndl/base';
-import { QueryResult, Record as Neo4jRecord } from 'neo4j-driver';
+import { GraphQLQueryResult, GraphQLRecord } from '../types/graphql-api-types';
 export function recordToNative(input: any): any {
   if (!input && input !== false) {
     return null;
@@ -18,14 +18,14 @@ export function recordToNative(input: any): any {
   return input;
 }
 
-export function resultToNative(result: QueryResult): Record<string, any> {
+export function resultToNative(result: GraphQLQueryResult): Record<string, any> {
   if (!result) {
     return {};
   }
 
   return result.records.map((row) => recordToNative(row));
 }
-export function checkResultKeys(first: Neo4jRecord, keys: string[]) {
+export function checkResultKeys(first: GraphQLRecord, keys: string[]) {
   const missing = keys.filter((key) => !first.keys.includes(key));
 
   if (missing.length > 0) {

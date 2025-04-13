@@ -5,8 +5,7 @@ import debounce from 'lodash/debounce';
 import { useCallback } from 'react';
 import NeoCodeViewerComponent, { NoDrawableDataErrorMessage } from '../component/editor/CodeViewerComponent';
 import { DEFAULT_ROW_LIMIT, HARD_ROW_LIMITING, RUN_QUERY_DELAY_MS } from '../config/ReportConfig';
-import { Neo4jContext, Neo4jContextState } from 'use-neo4j/dist/neo4j.context';
-import { useContext } from 'react';
+import { getGraphQLApiService } from '../services/GraphQLApiService';
 import NeoTableChart from '../chart/table/TableChart';
 import { getReportTypes } from '../extensions/ExtensionUtils';
 import { SELECTION_TYPES } from '../config/CardConfig';
@@ -21,7 +20,7 @@ import { deleteSessionStoragePrepopulationReportFunction } from '../extensions/s
 import { updateFieldsThunk } from '../card/CardThunks';
 import { getDashboardTheme } from '../dashboard/DashboardSelectors';
 
-export const REPORT_LOADING_ICON = <LoadingSpinner size='large' className='centered' style={{ marginTop: '-30px' }} />;
+export const REPORT_LOADING_ICON = <LoadingSpinner size='large' className='centered n-mt-[-30px]' />;
 
 export const NeoReport = ({
   pagenumber = '', // page number that the report is on.
@@ -60,12 +59,12 @@ export const NeoReport = ({
   const [records, setRecords] = useState(null);
   const [timer, setTimer] = useState(null);
   const [status, setStatus] = useState(QueryStatus.NO_QUERY);
-  const { driver } = useContext<Neo4jContextState>(Neo4jContext);
+  // Use GraphQLApiService instead of Neo4j driver
+  const graphQLApiService = getGraphQLApiService();
+  const apiService = getGraphQLApiService();
   const [loadingIcon, setLoadingIcon] = React.useState(REPORT_LOADING_ICON);
-  if (!driver) {
-    throw new Error(
-      '`driver` not defined. Have you added it into your app as <Neo4jContext.Provider value={{driver}}> ?'
-    );
+  if (!apiService) {
+    throw new Error('GraphQLApiService not available. Make sure you are connected to the GraphQL API.');
   }
   const debouncedRunCypherQuery = useCallback(debounce(runCypherQuery, RUN_QUERY_DELAY_MS), []);
 
@@ -113,7 +112,7 @@ export const NeoReport = ({
       setLoadingIcon(REPORT_LOADING_ICON);
       if (debounced) {
         debouncedRunCypherQuery(
-          driver,
+          null, // No driver needed for GraphQL implementation
           database,
           newQuery,
           parameters,
@@ -132,7 +131,7 @@ export const NeoReport = ({
         );
       } else {
         runCypherQuery(
-          driver,
+          null, // No driver needed for GraphQL implementation
           database,
           newQuery,
           parameters,
@@ -161,7 +160,7 @@ export const NeoReport = ({
     if (prepopulateExtensionName) {
       setLoadingIcon(EXTENSIONS[prepopulateExtensionName].customLoadingIcon);
       EXTENSIONS[prepopulateExtensionName].prepopulateReportFunction(
-        driver,
+        null, // No driver needed for GraphQL implementation
         getCustomDispatcher(),
         pagenumber,
         id,
@@ -205,7 +204,7 @@ export const NeoReport = ({
   const queryCallback = useCallback(
     (query, parameters, setRecords) => {
       runCypherQuery(
-        driver,
+        null, // No driver needed for GraphQL implementation
         database,
         query,
         parameters,

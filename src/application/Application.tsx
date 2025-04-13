@@ -37,7 +37,7 @@ import {
   setWelcomeScreenOpen,
 } from '../application/ApplicationActions';
 import { resetDashboardState } from '../dashboard/DashboardActions';
-import { NeoDashboardPlaceholder } from '../dashboard/placeholder/DashboardPlaceholder';
+import { LedgerCoreDashboardPlaceholder } from '../dashboard/placeholder/DashboardPlaceholder';
 import NeoConnectionModal from '../modal/ConnectionModal';
 
 import { loadDashboardThunk } from '../dashboard/DashboardThunks';
@@ -134,7 +134,7 @@ const Application = ({
           ></Dashboard>
         </Suspense>
       ) : (
-        <NeoDashboardPlaceholder></NeoDashboardPlaceholder>
+        <LedgerCoreDashboardPlaceholder></LedgerCoreDashboardPlaceholder>
       )}
       {/* TODO - move all models into a pop-ups (or modals) component. */}
       <Suspense fallback=''>

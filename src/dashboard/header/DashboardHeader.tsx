@@ -3,18 +3,19 @@ import { connect } from 'react-redux';
 import { setDashboardTitle } from '../DashboardActions';
 import { getDashboardSettings, getDashboardTheme, getDashboardTitle, getPages } from '../DashboardSelectors';
 import { setConnectionModalOpen } from '../../application/ApplicationActions';
-import { applicationGetStandaloneSettings, applicationGetCustomHeader } from '../../application/ApplicationSelectors';
+import { applicationGetStandaloneSettings, applicationGetCustomHeader, applicationGetConnection } from '../../application/ApplicationSelectors';
 import { getDashboardIsEditable, getPageNumber } from '../../settings/SettingsSelectors';
-import { NeoDashboardHeaderLogo } from './DashboardHeaderLogo';
-import NeoAboutButton from './DashboardHeaderAboutButton';
-import { NeoLogoutButton } from './DashboardHeaderLogoutButton';
-import { NeoDashboardHeaderDownloadImageButton } from './DashboardHeaderDownloadImageButton';
+import { LedgerCoreDashboardHeaderLogo } from './DashboardHeaderLogo';
+import LedgerCoreAboutButton from './DashboardHeaderAboutButton';
+import { LedgerCoreLogoutButton } from './DashboardHeaderLogoutButton';
+import { LedgerCoreDashboardHeaderDownloadImageButton } from './DashboardHeaderDownloadImageButton';
 import { updateDashboardSetting } from '../../settings/SettingsActions';
 import { DarkModeSwitch } from 'react-toggle-dark-mode';
 import { DASHBOARD_HEADER_BUTTON_COLOR } from '../../config/ApplicationConfig';
 import { Tooltip } from '@mui/material';
+import DatabaseSelector from '../../component/DatabaseSelector';
 
-export const NeoDashboardHeader = ({
+export const LedgerCoreDashboardHeader = ({
   standaloneSettings,
   dashboardTitle,
   customHeader,
@@ -26,6 +27,7 @@ export const NeoDashboardHeader = ({
   resetApplication,
   themeMode,
   setTheme,
+  isConnected,
 }) => {
   const downloadImageEnabled = settings ? settings.downloadImageEnabled : false;
   const [dashboardTitleText, setDashboardTitleText] = React.useState(dashboardTitle);
@@ -50,14 +52,10 @@ export const NeoDashboardHeader = ({
     <div className='n-relative n-bg-palette-neutral-bg-weak n-w-full'>
       <div className='n-min-w-full'>
         <div className='n-flex n-justify-between n-h-16 n-items-center n-py-6 md:n-justify-start md:n-space-x-10 n-mx-4'>
-          <NeoDashboardHeaderLogo resetApplication={resetApplication} />
-          <nav className='n-items-center n-justify-center n-flex n-flex-1 n-w-full n-font-semibold'>
-            {customHeader && customHeader.length > 0
-              ? `${customHeader}`
-              : `${connection.protocol}://${connection.url}:${connection.port}`}
-          </nav>
-          <div className='sm:n-flex n-items-center n-justify-end md:n-flex-1 lg:n-w-0 n-gap-6'>
-            <div className='n-flex n-flex-row n-gap-x-2'>
+          <LedgerCoreDashboardHeaderLogo resetApplication={resetApplication} />
+          <div className='n-flex-1'></div>
+          <div className='sm:n-flex n-items-center n-justify-end md:n-flex-1 lg:n-w-0'>
+            <div className='n-flex n-flex-row'>
               <Tooltip title={'Change Theme'} disableInteractive>
                 <div>
                   <DarkModeSwitch
@@ -71,10 +69,6 @@ export const NeoDashboardHeader = ({
                   />
                 </div>
               </Tooltip>
-
-              {downloadImageEnabled && <NeoDashboardHeaderDownloadImageButton onDownloadImage={onDownloadImage} />}
-              <NeoAboutButton connection={connection} onAboutModalOpen={onAboutModalOpen} />
-              <NeoLogoutButton standaloneSettings={standaloneSettings} onConnectionModalOpen={onConnectionModalOpen} />
             </div>
           </div>
         </div>
@@ -88,11 +82,13 @@ const mapStateToProps = (state) => ({
   dashboardTitle: getDashboardTitle(state),
   standaloneSettings: applicationGetStandaloneSettings(state),
   customHeader: applicationGetCustomHeader(state),
+  connection: applicationGetConnection(state),
   pages: getPages(state),
   settings: getDashboardSettings(state),
   editable: getDashboardIsEditable(state),
   pagenumber: getPageNumber(state),
   themeMode: getDashboardTheme(state),
+  isConnected: state.application.connected,
 });
 
 const mapDispatchToProps = (dispatch) => ({
@@ -109,4 +105,4 @@ const mapDispatchToProps = (dispatch) => ({
   },
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(NeoDashboardHeader);
+export default connect(mapStateToProps, mapDispatchToProps)(LedgerCoreDashboardHeader);

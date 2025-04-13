@@ -107,21 +107,23 @@ export const DashboardHeaderPageTitle = ({ title, tabIndex, removePage, setPageT
         )}
         {!disabled && !editing && (
           <>
-            <IconButton
-              aria-label='Page actions'
-              className={classnames('n-relative n-top-1 visible-on-tab-hover', {
-                'open-menu': menuOpen,
-              })}
-              style={{ height: '1.1rem' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                setAnchorEl(e.currentTarget);
-              }}
-              size='small'
-              clean
-            >
-              <EllipsisHorizontalIconOutline />
-            </IconButton>
+            <span>
+              <IconButton
+                aria-label='Page actions'
+                className={classnames('n-relative n-top-1 visible-on-tab-hover', {
+                  'open-menu': menuOpen,
+                })}
+                style={{ height: '1.1rem' }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setAnchorEl(e.currentTarget);
+                }}
+                size='small'
+                clean
+              >
+                <EllipsisHorizontalIconOutline />
+              </IconButton>
+            </span>
             <Menu anchorEl={anchorEl} open={menuOpen} onClose={() => setAnchorEl(null)}>
               <MenuItems>
                 <MenuItem

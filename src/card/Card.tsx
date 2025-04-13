@@ -25,7 +25,7 @@ import { updateGlobalParameterThunk } from '../settings/SettingsThunks';
 import useDimensions from 'react-cool-dimensions';
 import { setReportHelpModalOpen } from '../application/ApplicationActions';
 import { loadDatabaseListFromNeo4jThunk } from '../dashboard/DashboardThunks';
-import { Neo4jContext, Neo4jContextState } from 'use-neo4j/dist/neo4j.context';
+import { getGraphQLApiService } from '../services/GraphQLApiService';
 import { getDashboardExtensions } from '../dashboard/DashboardSelectors';
 import { downloadComponentAsImage } from '../chart/ChartUtils';
 import { Dialog } from '@neo4j-ndl/react';
@@ -56,17 +56,18 @@ const NeoCard = ({
   createNotification, // Thunk to create a global notification pop-up.
 }) => {
   // Will be used to fetch the list of current databases
-  const { driver } = useContext<Neo4jContextState>(Neo4jContext);
+  const apiService = getGraphQLApiService();
 
   const [databaseList, setDatabaseList] = React.useState([database]);
   const [databaseListLoaded, setDatabaseListLoaded] = React.useState(false);
 
   const ref = React.useRef();
 
-  // fetching the list of databases from neo4j, filtering out the 'system' db
+  // fetching the list of databases from GraphQL API, filtering out the 'system' db
   useEffect(() => {
     if (!databaseListLoaded) {
-      loadDatabaseListFromNeo4j(driver, (result) => {
+      // Use the GraphQL API service to load the database list
+      loadDatabaseListFromNeo4j(apiService, (result) => {
         let index = result.indexOf('system');
         if (index > -1) {
           // only splice array when item is found

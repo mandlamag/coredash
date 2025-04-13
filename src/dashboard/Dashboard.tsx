@@ -1,17 +1,18 @@
 import React from 'react';
 import NeoPage from '../page/Page';
-import NeoDashboardHeader from './header/DashboardHeader';
-import NeoDashboardTitle from './header/DashboardTitle';
-import NeoDashboardHeaderPageList from './header/DashboardHeaderPageList';
-import { createDriver, Neo4jProvider } from 'use-neo4j';
+import LedgerCoreDashboardHeader from './header/DashboardHeader';
+import LedgerCoreDashboardTitle from './header/DashboardTitle';
+import LedgerCoreDashboardHeaderPageList from './header/DashboardHeaderPageList';
+// Import GraphQLApiService instead of Neo4j driver
+import { getGraphQLApiService } from '../services/GraphQLApiService';
 import { applicationGetConnection, applicationGetStandaloneSettings } from '../application/ApplicationSelectors';
 import { connect } from 'react-redux';
-import NeoDashboardConnectionUpdateHandler from '../component/misc/DashboardConnectionUpdateHandler';
+import LedgerCoreDashboardConnectionUpdateHandler from '../component/misc/DashboardConnectionUpdateHandler';
 import { forceRefreshPage } from '../page/PageActions';
 import { getPageNumber } from '../settings/SettingsSelectors';
 import { createNotificationThunk } from '../page/PageThunks';
 import { version } from '../modal/AboutModal';
-import NeoDashboardSidebar from './sidebar/DashboardSidebar';
+import LedgerCoreDashboardSidebar from './sidebar/DashboardSidebar';
 
 const Dashboard = ({
   pagenumber,
@@ -22,23 +23,18 @@ const Dashboard = ({
   onAboutModalOpen,
   resetApplication,
 }) => {
-  const [driver, setDriver] = React.useState(undefined);
+  // Use GraphQLApiService instead of Neo4j driver
+  const [apiService, setApiService] = React.useState(undefined);
 
-  // If no driver is yet instantiated, create a new one.
-  if (driver == undefined) {
-    const newDriver = createDriver(
-      connection.protocol,
-      connection.url,
-      connection.port,
-      connection.username,
-      connection.password,
-      { userAgent: `neodash/v${version}` }
-    );
-    setDriver(newDriver);
+  // If no API service is yet instantiated, get the singleton instance
+  if (apiService === undefined && connection.connected) {
+    // Get the GraphQLApiService singleton instance
+    const service = getGraphQLApiService();
+    setApiService(service);
   }
   const content = (
-    <Neo4jProvider driver={driver}>
-      <NeoDashboardConnectionUpdateHandler
+    <div>
+      <LedgerCoreDashboardConnectionUpdateHandler
         pagenumber={pagenumber}
         connection={connection}
         onConnectionUpdate={onConnectionUpdate}
@@ -49,12 +45,12 @@ const Dashboard = ({
         className='n-w-screen n-flex n-flex-row n-items-center n-bg-neutral-bg-weak n-border-b'
         style={{ borderColor: 'lightgrey' }}
       >
-        <NeoDashboardHeader
+        <LedgerCoreDashboardHeader
           connection={connection}
           onDownloadImage={onDownloadDashboardAsImage}
           onAboutModalOpen={onAboutModalOpen}
           resetApplication={resetApplication}
-        ></NeoDashboardHeader>
+        ></LedgerCoreDashboardHeader>
       </div>
       {/* Main Page */}
       <div
@@ -67,7 +63,7 @@ const Dashboard = ({
         }}
       >
         {!standaloneSettings.standalone || (standaloneSettings.standalone && standaloneSettings.standaloneAllowLoad) ? (
-          <NeoDashboardSidebar />
+          <LedgerCoreDashboardSidebar />
         ) : (
           <></>
         )}
@@ -83,13 +79,13 @@ const Dashboard = ({
                     {standaloneSettings.standalonePassword &&
                     standaloneSettings.standalonePasswordWarningHidden !== true ? (
                       <div style={{ textAlign: 'center', color: 'red', paddingTop: 60, marginBottom: -50 }}>
-                        Warning: NeoDash is running with a plaintext password in config.json.
+                        Warning: LedgerCore is running with a plaintext password in config.json.
                       </div>
                     ) : (
                       <></>
                     )}
-                    <NeoDashboardTitle />
-                    <NeoDashboardHeaderPageList />
+                    <LedgerCoreDashboardTitle />
+                    <LedgerCoreDashboardHeaderPageList />
                     <NeoPage></NeoPage>
                   </div>
                 </div>
@@ -98,7 +94,7 @@ const Dashboard = ({
           </div>
         </div>
       </div>
-    </Neo4jProvider>
+    </div>
   );
   return content;
 };
@@ -114,7 +110,7 @@ const mapDispatchToProps = (dispatch) => ({
     dispatch(
       createNotificationThunk(
         'Connection Updated',
-        'You have updated your Neo4j connection, your reports have been reloaded.'
+        'You have updated your GraphQL connection, your reports have been reloaded.'
       )
     );
     dispatch(forceRefreshPage(pagenumber));

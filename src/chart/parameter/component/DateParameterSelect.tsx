@@ -2,14 +2,14 @@ import React, { useEffect } from 'react';
 import { ParameterSelectProps } from './ParameterSelect';
 import NeoDatePicker from '../../../component/field/DateField';
 import dayjs from 'dayjs';
-import { Date as Neo4jDate } from 'neo4j-driver-core/lib/temporal-types.js';
+import { GraphQLDate } from '../../../types/graphql-api-types';
 import { isCastableToNeo4jDate, isEmptyObject } from '../../ChartUtils';
 
 function castPropsToBoltDate(dict) {
   if (isEmptyObject(dict)) {
     return undefined;
   }
-  return new Neo4jDate(dict.year, dict.month, dict.day);
+  return new GraphQLDate(dict.year, dict.month, dict.day);
 }
 
 function castPropsToJsDate(dict) {
@@ -59,11 +59,15 @@ const DatePickerParameterSelectComponent = (props: ParameterSelectProps) => {
             return;
           }
           if (newValue == null && clearParameterOnFieldClear) {
-            setParameterValue(Neo4jDate.fromStandardDate(defaultValue.toDate()));
+            // Convert from dayjs date to GraphQLDate
+            const date = defaultValue.toDate();
+            setParameterValue(new GraphQLDate(date.getFullYear(), date.getMonth() + 1, date.getDate()));
           } else if (newValue == null) {
             setParameterValue(undefined);
           } else if (newValue.isValid()) {
-            setParameterValue(Neo4jDate.fromStandardDate(newValue.toDate()));
+            // Convert from dayjs date to GraphQLDate
+            const date = newValue.toDate();
+            setParameterValue(new GraphQLDate(date.getFullYear(), date.getMonth() + 1, date.getDate()));
           }
         }}
       />

@@ -6,27 +6,37 @@ import { createUUID } from '../../utils/uuid';
 
 // Thunk to handle log events.
 
+// Define the interface for log parameters
+interface LogParams {
+  driver: any;
+  database: string;
+  mode: string;
+  user: string;
+  category?: string;
+  action: string;
+  dashboardId?: string;
+}
+
 export const createLogThunk =
-  (loggingDriver, loggingDatabase, neodashMode, logUser, logAction, logDatabase, logDashboard = '', logMessage) =>
+  (params: LogParams) =>
   (dispatch: any, getState: any) => {
     try {
       const uuid = createUUID();
       // Generate a cypher query to save the log.
       const query =
-        'CREATE (n:_Neodash_Log) SET n.uuid = $uuid, n.user = $user, n.date = datetime(), n.neodash_mode = $neodashMode, n.action = $logAction, n.database = $logDatabase, n.dashboard = $logDashboard, n.message = $logMessage RETURN $uuid as uuid';
+        'CREATE (n:_Neodash_Log) SET n.uuid = $uuid, n.user = $user, n.date = datetime(), n.neodash_mode = $neodashMode, n.action = $action, n.database = $database, n.dashboard = $dashboardId RETURN $uuid as uuid';
 
       const parameters = {
         uuid: uuid,
-        user: logUser,
-        logAction: logAction,
-        logDatabase: logDatabase,
-        neodashMode: neodashMode,
-        logDashboard: logDashboard,
-        logMessage: logMessage,
+        user: params.user,
+        action: params.action,
+        database: params.database,
+        neodashMode: params.mode,
+        dashboardId: params.dashboardId || '',
       };
       runCypherQuery(
-        loggingDriver,
-        loggingDatabase,
+        params.driver,
+        params.database,
         query,
         parameters,
         1,

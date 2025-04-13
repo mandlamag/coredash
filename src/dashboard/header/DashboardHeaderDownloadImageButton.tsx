@@ -8,7 +8,7 @@ import StyleConfig from '../../config/StyleConfig';
 
 await StyleConfig.getInstance();
 
-export const NeoDashboardHeaderDownloadImageButton = (onDownloadImage) => {
+export const LedgerCoreDashboardHeaderDownloadImageButton = (onDownloadImage) => {
   const content = (
     <Tooltip title={'Download Dashboard as Image'} disableInteractive>
       <IconButton
@@ -26,4 +26,4 @@ export const NeoDashboardHeaderDownloadImageButton = (onDownloadImage) => {
   return content;
 };
 
-export default NeoDashboardHeaderDownloadImageButton;
+export default LedgerCoreDashboardHeaderDownloadImageButton;

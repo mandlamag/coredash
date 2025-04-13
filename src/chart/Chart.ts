@@ -1,11 +1,11 @@
-import { Record as Neo4jRecord } from 'neo4j-driver';
+import { GraphQLRecord } from '../types/graphql-api-types';
 
 /**
  * Interface for all charts that NeoDash can render.
  * When you extend NeoDash, make sure that your component implements this interface.
  */
 export interface ChartProps {
-  records: Neo4jRecord[]; // Query output, Neo4j records as returned from the driver.
+  records: GraphQLRecord[]; // Query output, records as returned from the GraphQL API.
   extensions?: Record<string, any>; // A dictionary of enabled extensions.
   selection?: Record<string, any>; // A dictionary with the selection made in the report footer.
   settings?: Record<string, any>; // A dictionary with the 'advanced settings' specified through the NeoDash interface.

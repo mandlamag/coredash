@@ -1,4 +1,5 @@
 import { QueryStatus, runCypherQuery } from '../../report/ReportQueryRunner';
+import { getNodeLabels } from '../../utils/MetadataUtils';
 
 export enum Operation {
   GRANT,
@@ -217,24 +218,15 @@ export const retrieveNeo4jUsers = (driver, currentRole, setNeo4jUsers, setRoleUs
  * @param setLabels callback to update the list of labels.
  */
 export function retrieveLabelsList(driver, database: any, setLabels: (records: any) => void) {
-  let labelsSet = false; // Flag to track if setLabels was called
-
-  // Wrapper around the original setLabels to set the flag when called
-  const wrappedSetLabels = (records) => {
-    labelsSet = true;
+  // Use the new MetadataUtils to get node labels
+  getNodeLabels(driver, database, (labels) => {
+    // Transform the labels array into the format expected by the caller
+    const records = labels.map(label => ({ label }));
     setLabels(records);
-  };
-
-  runCypherQuery(driver, database, 'CALL db.labels()', {}, 1000, () => {}, wrappedSetLabels)
-    .then(() => {
-      if (!labelsSet) {
-        setLabels([]);
-      }
-    })
-    .catch((error) => {
-      console.error('Error retrieving labels:', error);
-      setLabels([]);
-    });
+  }).catch((error) => {
+    console.error('Error retrieving labels:', error);
+    setLabels([]);
+  });
 }
 
 /**

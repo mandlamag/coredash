@@ -12,17 +12,17 @@ import { DASHBOARD_HEADER_BUTTON_COLOR } from '../../config/ApplicationConfig';
 import StyleConfig from '../../config/StyleConfig';
 import { getDashboardExtensions } from '../DashboardSelectors';
 import { getExampleReports } from '../../extensions/ExtensionUtils';
-import { NeoReportExamplesModal } from '../../modal/ReportExamplesModal';
+import { NeoReportExamplesModal as LedgerCoreReportExamplesModal } from '../../modal/ReportExamplesModal';
 import { enterHandler, openTab } from '../../utils/accessibility';
 
 type HelpMenuOpenEvent = React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>;
 
 await StyleConfig.getInstance();
 
-export const NeoAboutButton = ({ connection, onAboutModalOpen, extensions }) => {
+export const LedgerCoreAboutButton = ({ connection, onAboutModalOpen, extensions }) => {
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const handleHelpMenuOpen = (event: HelpMenuOpenEvent) => {
-    setAnchorEl(event.currentTarget);
+    setAnchorEl(event.currentTarget as HTMLButtonElement);
   };
   const handleHelpMenuClose = () => {
     setAnchorEl(null);
@@ -63,14 +63,14 @@ export const NeoAboutButton = ({ connection, onAboutModalOpen, extensions }) => 
         size='large'
       >
         <MenuItems>
-          <NeoReportExamplesModal
+          <LedgerCoreReportExamplesModal
             extensions={extensions}
             examples={getExampleReports(extensions)}
             database={connection.database}
-          ></NeoReportExamplesModal>
+          ></LedgerCoreReportExamplesModal>
           <MenuItem
-            onKeyDown={(e) => enterHandler(e, () => openTab('https://neo4j.com/labs/neodash/2.4/user-guide/'))}
-            onClick={() => openTab('https://neo4j.com/labs/neodash/2.4/user-guide/')}
+            onKeyDown={(e) => enterHandler(e, () => openTab('https://github.com/silversixpence-crypto/ledgercore-dash'))}
+            onClick={() => openTab('https://github.com/silversixpence-crypto/ledgercore-dash')}
             title={'Documentation'}
             icon={<BookOpenIconOutline />}
           />
@@ -90,4 +90,4 @@ const mapStateToProps = (state) => ({
   extensions: getDashboardExtensions(state),
 });
 
-export default connect(mapStateToProps, null)(NeoAboutButton);
+export default connect(mapStateToProps, null)(LedgerCoreAboutButton);

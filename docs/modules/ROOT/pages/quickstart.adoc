@@ -23,9 +23,12 @@ yarn install
 yarn run dev
 ```
 
-NeoDash connects to any recent version of the Neo4j database. (Neo4j 4.0
-or later). The quickest way to get started is to create a free cloud
-database on https://console.neo4j.io[Neo4j Aura].
+NeoDash connects to any GraphQL API endpoint that supports the Neo4j-compatible GraphQL schema. 
+The application also supports a "Skip Login" feature that allows you to run queries without authentication, 
+which is particularly useful for development and testing scenarios.
+
+Previously, NeoDash required a direct Neo4j database connection (Neo4j 4.0 or later), but the application 
+now uses a GraphQL API client layer for all database interactions.
 
 To get started with building your own dashboard, see the Dashboards
 page.

@@ -3,6 +3,7 @@
 import React, { useCallback, useContext, useEffect } from 'react';
 import { RUN_QUERY_DELAY_MS } from '../../config/ReportConfig';
 import { QueryStatus, runCypherQuery } from '../../report/ReportQueryRunner';
+import { getNodeLabels, getRelationshipTypes, getPropertyKeys } from '../../utils/MetadataUtils';
 import { Neo4jContext, Neo4jContextState } from 'use-neo4j/dist/neo4j.context';
 import { Autocomplete, debounce, TextField } from '@mui/material';
 import NeoField from '../../component/field/Field';
@@ -378,11 +379,24 @@ const ParameterSelectCardSettings = ({ query, database, settings, onReportSettin
                     if (manualPropertyNameSpecification) {
                       handlePropertyDisplayNameSelectionUpdate(value);
                     } else {
-                      queryCallback(
-                        'CALL db.propertyKeys() YIELD propertyKey as propertyName WITH propertyName WHERE toLower(propertyName) CONTAINS toLower($input) RETURN DISTINCT propertyName ORDER BY size(propertyName) LIMIT 5',
-                        { input: value },
-                        setPropertyRecords
-                      );
+                      // Use the new MetadataUtils to get property keys
+                      getPropertyKeys(driver, database, (propertyKeys) => {
+                        // Filter property keys based on input value
+                        const filteredKeys = propertyKeys
+                          .filter(key => key.toLowerCase().includes(value.toLowerCase()))
+                          .sort((a, b) => a.length - b.length) // Sort by size
+                          .slice(0, 5); // Limit to 5 results
+                        
+                        // Transform to match expected format
+                        const formattedRecords = filteredKeys.map(key => ({
+                          get: (propName) => propName === 'propertyName' ? key : null,
+                          keys: ['propertyName'],
+                          _fields: [key],
+                          toObject: () => ({ propertyName: key })
+                        }));
+                        
+                        setPropertyRecords(formattedRecords);
+                      });
                     }
                   }}
                   value={settings.propertyTypeDisplay || settings.propertyType}

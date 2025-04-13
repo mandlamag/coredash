@@ -23,3 +23,6 @@ export const DASHBOARD_HEADER_BRAND_LOGO =
 export const IS_CUSTOM_LOGO = Boolean(styleConfig?.style?.DASHBOARD_HEADER_BRAND_LOGO);
 
 export const CUSTOM_CONNECTION_FOOTER_TEXT = ''; // ''
+
+// If true, users can run queries without logging in
+export const ALLOW_QUERIES_WITHOUT_LOGIN = true;

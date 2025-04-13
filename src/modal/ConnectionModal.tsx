@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { SSOLoginButton } from '../component/sso/SSOLoginButton';
 import { Button, Dialog, Switch, TextInput, Dropdown, TextLink, IconButton } from '@neo4j-ndl/react';
-import { PlayIconOutline, ArrowLeftIconOutline } from '@neo4j-ndl/react/icons';
+import { PlayIconOutline, ArrowLeftIconOutline, StopIconOutline } from '@neo4j-ndl/react/icons';
+import { ALLOW_QUERIES_WITHOUT_LOGIN } from '../config/ApplicationConfig';
 
 /**
  * Configures setting the current GraphQL API connection for the dashboard.
@@ -64,44 +65,25 @@ export default function NeoConnectionModal({
         aria-labelledby='form-dialog-title'
         disableCloseButton={!dismissable}
       >
-        <Dialog.Header id='form-dialog-title'>{standalone ? 'Connect to Dashboard' : 'Connect to GraphQL API'}</Dialog.Header>
+        <Dialog.Header id='form-dialog-title'>{standalone ? 'Connect to Dashboard' : 'Connect to Database'}</Dialog.Header>
         <Dialog.Content className='n-flex n-flex-col n-gap-token-4'>
           {!standalone ? (
             <div className='n-flex n-flex-col n-gap-token-4'>
-              <TextInput
-                id='apiEndpoint'
-                value={apiEndpoint}
-                disabled={standalone}
-                onChange={(e) => setApiEndpoint(e.target.value)}
-                label='GraphQL API Endpoint'
-                placeholder='https://api.example.com/graphql'
-                autoFocus
-                fluid
-              />
-              <TextInput
-                id='apiKey'
-                value={apiKey}
-                disabled={standalone}
-                onChange={(e) => setApiKey(e.target.value)}
-                label='API Key (Optional)'
-                placeholder='your-api-key'
-                fluid
-              />
-              <TextInput
-                id='authToken'
-                value={authToken}
-                disabled={standalone}
-                onChange={(e) => setAuthToken(e.target.value)}
-                label='Auth Token (Optional)'
-                placeholder='Bearer token'
-                type='password'
-                fluid
-              />
+              {/* Hidden fields with hardcoded values */}
+              <input type='hidden' id='apiEndpoint' value='http://localhost:4000/graphql' />
+              <input type='hidden' id='apiKey' value='' />
+              <input type='hidden' id='authToken' value='' />
+              
+              <div className='n-text-neutral-text-weak n-text-center n-p-4 n-bg-neutral-bg-weak n-rounded-md'>
+                <p>Connect to the GraphQL API to start using the dashboard.</p>
+                <p className='n-text-sm n-mt-2'>The API endpoint is automatically configured.</p>
+              </div>
+              
               <TextInput
                 id='database'
                 value={database}
                 onChange={(e) => setDatabase(e.target.value)}
-                label='Database (Optional)'
+                label='Database'
                 placeholder='neo4j'
                 fluid
               />
@@ -161,19 +143,37 @@ export default function NeoConnectionModal({
                 providers={ssoSettings.ssoProviders}
               />
             ) : (
-              <Button
-                type='submit'
-                onClick={(e) => {
-                  e.preventDefault();
-                  onConnectionModalClose();
-                  createConnection(apiEndpoint, apiKey, authToken, database);
-                }}
-                style={{ float: 'right', marginTop: '20px', marginBottom: '20px' }}
-                size='large'
-              >
-                Connect
-                <PlayIconOutline className='btn-icon-base-r' />
-              </Button>
+              <div className="n-flex n-flex-row n-justify-center n-gap-4" style={{ marginTop: '20px', marginBottom: '20px' }}>
+                {ALLOW_QUERIES_WITHOUT_LOGIN && (
+                  <Button
+                    type='button'
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onConnectionModalClose();
+                      // Use default API endpoint with no authentication
+                      createConnection('http://localhost:4000/graphql', '', '', database || 'neo4j');
+                    }}
+                    color="primary"
+                    size='large'
+                  >
+                    Skip Login
+                    <StopIconOutline className='btn-icon-base-r' />
+                  </Button>
+                )}
+                <Button
+                  type='submit'
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onConnectionModalClose();
+                    // Always use the hardcoded API endpoint
+                    createConnection('http://localhost:4000/graphql', '', '', database);
+                  }}
+                  size='large'
+                >
+                  Connect
+                  <PlayIconOutline className='btn-icon-base-r' />
+                </Button>
+              </div>
             )}
           </form>
         </Dialog.Content>
@@ -199,7 +199,11 @@ export default function NeoConnectionModal({
             </div>
           ) : (
             <div style={{ color: 'white' }}>
-              Enter your GraphQL API endpoint and authentication details to start. The API should implement the required GraphQL schema for Neo4j data access.
+              {ALLOW_QUERIES_WITHOUT_LOGIN ? (
+                <>Enter your GraphQL API endpoint and authentication details to start, or click "Skip Login" to use the default connection. The API should implement the required GraphQL schema for Neo4j data access.</>
+              ) : (
+                <>Enter your GraphQL API endpoint and authentication details to start. The API should implement the required GraphQL schema for Neo4j data access.</>
+              )}
             </div>
           )}
         </Dialog.Actions>

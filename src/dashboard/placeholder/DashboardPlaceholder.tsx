@@ -1,18 +1,18 @@
 import React from 'react';
 import { LoadingSpinner } from '@neo4j-ndl/react';
 import { BoltIconSolid } from '@neo4j-ndl/react/icons';
-import { NeoDashboardHeaderLogo } from '../header/DashboardHeaderLogo';
+import { LedgerCoreDashboardHeaderLogo } from '../header/DashboardHeaderLogo';
 
-export const NeoDashboardPlaceholder = () => {
+export const LedgerCoreDashboardPlaceholder = () => {
   return (
     <>
       <div className='n-w-screen n-flex n-flex-row n-items-center n-bg-neutral-bg-weak n-border-b n-border-neutral-border-weak'>
         <div className='n-relative n-bg-neutral-bg-weak n-w-full'>
           <div className='n-min-w-full'>
             <div className='n-flex n-justify-between n-h-16 n-items-center n-py-6 md:n-justify-start md:n-space-x-10 n-mx-4'>
-              <NeoDashboardHeaderLogo />
+              <LedgerCoreDashboardHeaderLogo />
               <nav className='n-items-center n-justify-center n-flex n-flex-1 n-w-full'>
-                NeoDash <BoltIconSolid className='icon-base' color='gold' />
+                LedgerCore <BoltIconSolid className='icon-base' color='gold' />
               </nav>
               <div className='sm:n-flex n-items-center n-justify-end md:n-flex-1 lg:n-w-0 n-gap-6'></div>
             </div>
@@ -34,4 +34,4 @@ export const NeoDashboardPlaceholder = () => {
   );
 };
 
-export default NeoDashboardPlaceholder;
+export default LedgerCoreDashboardPlaceholder;

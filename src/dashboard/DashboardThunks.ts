@@ -512,10 +512,11 @@ export const loadDashboardListFromNeo4jThunk = (driver, database, callback) => (
   }
 };
 
-export const loadDatabaseListFromNeo4jThunk = (driver, callback) => (dispatch: any) => {
+export const loadDatabaseListFromNeo4jThunk = (apiService, callback) => (dispatch: any) => {
   try {
+    // Use the GraphQLApiService to get the list of databases
     runCypherQuery(
-      driver,
+      apiService, // Pass the apiService instead of driver
       'system',
       'SHOW DATABASES yield name, currentStatus WHERE currentStatus = "online" RETURN DISTINCT name',
       {},
@@ -529,7 +530,7 @@ export const loadDatabaseListFromNeo4jThunk = (driver, callback) => (dispatch: a
       }
     );
   } catch (e) {
-    dispatch(createNotificationThunk('Unable to list databases from Neo4j', e));
+    dispatch(createNotificationThunk('Unable to list databases from GraphQL API', e));
   }
 };
 

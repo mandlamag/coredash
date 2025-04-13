@@ -9,7 +9,7 @@ import { ArrowRightOnRectangleIconOutline } from '@neo4j-ndl/react/icons';
 
 await StyleConfig.getInstance();
 
-export const NeoLogoutButton = ({ standaloneSettings, onConnectionModalOpen }) => {
+export const LedgerCoreLogoutButton = ({ standaloneSettings, onConnectionModalOpen }) => {
   return standaloneSettings.standalone && !standaloneSettings.standaloneMultiDatabase ? (
     <></>
   ) : (
@@ -34,4 +34,4 @@ const mapStateToProps = () => ({});
 
 const mapDispatchToProps = () => ({});
 
-export default connect(mapStateToProps, mapDispatchToProps)(NeoLogoutButton);
+export default connect(mapStateToProps, mapDispatchToProps)(LedgerCoreLogoutButton);

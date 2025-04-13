@@ -1,18 +1,15 @@
 {
-    "short_name": "NeoDash",
-    "name": "NeoDash",
-    "homepage": "https://github.com/neo4j-labs/neodash/",
+    "short_name": "LedgerCore",
+    "name": "LedgerCore Dashboard",
+    "homepage": "#",
     "neo4jDesktop": {
         "apiVersion": "^1.2.0"
     },
     "icons": [
         {
-            "src": "favicon.ico",
-            "type": "ico"
-        },
-        {
-            "src": "favicon.png",
-            "type": "png"
+            "src": "ss_logo.png",
+            "type": "png",
+            "sizes": "192x192"
         }
     ],
     "start_url": "./index.html",

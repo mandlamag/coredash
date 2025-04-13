@@ -1,0 +1,200 @@
+{
+  "title": "Bitcoin Transaction Analysis Dashboard",
+  "version": "2.2",
+  "uuid": "default-bitcoin-dashboard",
+  "settings": {
+    "pagenumber": 0,
+    "editable": true,
+    "fullscreenEnabled": true,
+    "parameters": {}
+  },
+  "pages": [
+    {
+      "title": "Overview",
+      "reports": [
+        {
+          "title": "Total Transaction Count",
+          "query": "MATCH (tx:Transaction) RETURN count(tx) as TotalTransactions",
+          "width": 6,
+          "height": 2,
+          "x": 0,
+          "y": 0,
+          "type": "value",
+          "selection": {
+            "index": 0,
+            "value": "TotalTransactions"
+          },
+          "settings": {
+            "valueFormat": "0,0",
+            "description": "Total number of Bitcoin transactions in the database"
+          }
+        },
+        {
+          "title": "24h Transaction Volume",
+          "query": "MATCH (tx:Transaction) WHERE tx.timestamp > datetime() - duration('P1D') RETURN sum(tx.value) as Volume",
+          "width": 6,
+          "height": 2,
+          "x": 6,
+          "y": 0,
+          "type": "value",
+          "selection": {
+            "index": 0,
+            "value": "Volume"
+          },
+          "settings": {
+            "valueFormat": "0,0.00 BTC",
+            "description": "Total Bitcoin volume in the last 24 hours"
+          }
+        },
+        {
+          "title": "Transaction Volume Over Time",
+          "query": "MATCH (tx:Transaction) WHERE tx.timestamp > datetime() - duration('P30D') WITH date(tx.timestamp) as day, sum(tx.value) as volume RETURN day, volume ORDER BY day",
+          "width": 6,
+          "height": 4,
+          "x": 0,
+          "y": 2,
+          "type": "line",
+          "selection": {
+            "x": "day",
+            "value": ["volume"]
+          },
+          "settings": {
+            "showLegend": true,
+            "valueFormat": "0,0.00 BTC",
+            "description": "Bitcoin transaction volume over the last 30 days"
+          }
+        },
+        {
+          "title": "Largest Transactions",
+          "query": "MATCH (tx:Transaction) WHERE tx.timestamp > datetime() - duration('P7D') RETURN tx.hash as TxHash, tx.value as Value, tx.timestamp as Timestamp ORDER BY Value DESC LIMIT 10",
+          "width": 6,
+          "height": 4,
+          "x": 6,
+          "y": 2,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "description": "Largest Bitcoin transactions in the last 7 days"
+          }
+        },
+        {
+          "title": "Transaction Network",
+          "query": "MATCH (a:Address)-[:PARTICIPATES_IN]->(tx:Transaction)<-[:PARTICIPATES_IN]-(b:Address) WHERE tx.timestamp > datetime() - duration('P1D') RETURN a, tx, b LIMIT 100",
+          "width": 12,
+          "height": 6,
+          "x": 0,
+          "y": 6,
+          "type": "graph",
+          "selection": {},
+          "settings": {
+            "nodePositions": {},
+            "description": "Recent transaction network visualization"
+          }
+        }
+      ],
+      "parameters": {}
+    },
+    {
+      "title": "Address Analysis",
+      "reports": [
+        {
+          "title": "Top Addresses by Balance",
+          "query": "MATCH (addr:Address) RETURN addr.address as Address, addr.balance as Balance ORDER BY Balance DESC LIMIT 15",
+          "width": 6,
+          "height": 4,
+          "x": 0,
+          "y": 0,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "valueFormat": "0,0.00000000 BTC",
+            "description": "Addresses with the highest Bitcoin balances"
+          }
+        },
+        {
+          "title": "Address Activity Distribution",
+          "query": "MATCH (addr:Address)-[:PARTICIPATES_IN]->(tx:Transaction) WITH addr, count(tx) as txCount RETURN CASE WHEN txCount < 10 THEN '1-9' WHEN txCount < 100 THEN '10-99' WHEN txCount < 1000 THEN '100-999' ELSE '1000+' END as ActivityLevel, count(addr) as AddressCount ORDER BY ActivityLevel",
+          "width": 6,
+          "height": 4,
+          "x": 6,
+          "y": 0,
+          "type": "bar",
+          "selection": {
+            "x": "ActivityLevel",
+            "value": ["AddressCount"]
+          },
+          "settings": {
+            "showLegend": false,
+            "description": "Distribution of addresses by transaction count"
+          }
+        },
+        {
+          "title": "Address Connections",
+          "query": "MATCH (a:Address)-[:PARTICIPATES_IN]->(:Transaction)<-[:PARTICIPATES_IN]-(b:Address) WHERE a.balance > 10 AND b.balance > 10 RETURN a, b LIMIT 200",
+          "width": 12,
+          "height": 6,
+          "x": 0,
+          "y": 4,
+          "type": "graph",
+          "selection": {},
+          "settings": {
+            "nodePositions": {},
+            "description": "Network of connected high-value addresses"
+          }
+        }
+      ],
+      "parameters": {}
+    },
+    {
+      "title": "Sanctioned Addresses",
+      "reports": [
+        {
+          "title": "Sanctioned Addresses by Category",
+          "query": "MATCH (addr:Address) WHERE addr.sanctioned = true RETURN addr.category as Category, count(addr) as AddressCount ORDER BY AddressCount DESC",
+          "width": 6,
+          "height": 4,
+          "x": 0,
+          "y": 0,
+          "type": "pie",
+          "selection": {
+            "index": "Category",
+            "value": "AddressCount"
+          },
+          "settings": {
+            "showLegend": true,
+            "description": "Distribution of sanctioned addresses by category"
+          }
+        },
+        {
+          "title": "Recently Active Sanctioned Addresses",
+          "query": "MATCH (addr:Address)-[:PARTICIPATES_IN]->(tx:Transaction) WHERE addr.sanctioned = true AND tx.timestamp > datetime() - duration('P7D') RETURN addr.address as Address, addr.entity as Entity, addr.category as Category, max(tx.timestamp) as LastActivity ORDER BY LastActivity DESC LIMIT 10",
+          "width": 6,
+          "height": 4,
+          "x": 6,
+          "y": 0,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "description": "Sanctioned addresses with activity in the last 7 days"
+          }
+        },
+        {
+          "title": "High-Value Transactions to Sanctioned Addresses",
+          "query": "MATCH (addr:Address)-[r:PARTICIPATES_IN]->(tx:Transaction) WHERE addr.sanctioned = true AND r.type = 'INPUT' AND tx.timestamp > datetime() - duration('P30D') RETURN tx.hash as TxHash, tx.value as Value, addr.address as SanctionedAddress, addr.entity as Entity, tx.timestamp as Timestamp ORDER BY Value DESC LIMIT 15",
+          "width": 12,
+          "height": 4,
+          "x": 0,
+          "y": 4,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "description": "Largest transactions to sanctioned addresses in the last 30 days"
+          }
+        }
+      ],
+      "parameters": {}
+    }
+  ],
+  "parameters": {},
+  "extensions": {}
+}

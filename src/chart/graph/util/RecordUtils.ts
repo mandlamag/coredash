@@ -3,7 +3,7 @@ import { extractNodePropertiesFromRecords, mergeNodePropsFieldsLists } from '../
 import { valueIsArray, valueIsNode, valueIsRelationship, valueIsPath, toNumber } from '../../ChartUtils';
 import { GraphChartVisualizationProps } from '../GraphChartVisualization';
 import { assignCurvatureToLink } from './RelUtils';
-import { isNode } from 'neo4j-driver-core/lib/graph-types.js';
+import { isNode } from '../../../types/graphql-api-types';
 
 const update = (state, mutations) => Object.assign({}, state, mutations);
 
@@ -242,7 +242,7 @@ export function injectNewRecordsIntoGraphVisualization(
   const { nodes, links } = buildGraphVisualizationObjectFromRecords(
     records,
     { ...nodesMap },
-    {},
+    {} as Record<string, any>[],
     props.data.nodeLabels,
     props.data.linkTypes,
     props.style.colorScheme,

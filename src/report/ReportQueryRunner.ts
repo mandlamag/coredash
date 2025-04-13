@@ -1,6 +1,7 @@
 import { extractNodePropertiesFromRecords, extractNodeAndRelPropertiesFromRecords } from './ReportRecordProcessing';
 import isEqual from 'lodash.isequal';
 import { getGraphQLApiService } from '../services/GraphQLApiService';
+import { GraphQLApiError } from '../services/GraphQLApiError';
 import { 
   transformGraphQLResultToNeo4jResult,
   transformNeo4jParamsToGraphQLParams,
@@ -139,23 +140,53 @@ export async function runCypherQuery(
     setStatus(QueryStatus.COMPLETE);
     setRecords(records);
   } catch (error: any) {
+    // Convert to GraphQLApiError for structured error handling
+    const graphqlError = error instanceof GraphQLApiError ? error : GraphQLApiError.fromError(error);
+    
+    // Log the error with detailed information
+    console.error('Error executing Cypher query:', {
+      query: query.substring(0, 100) + (query.length > 100 ? '...' : ''),
+      error: graphqlError,
+      statusCode: graphqlError.statusCode,
+      graphQLErrors: graphqlError.graphQLErrors
+    });
+    
     // Handle timeout errors
-    if (error.message && error.message.includes('timeout')) {
+    if (graphqlError.message.includes('timeout') || 
+        (graphqlError.originalError && graphqlError.originalError.message && 
+         graphqlError.originalError.message.includes('timeout'))) {
       setStatus(QueryStatus.TIMED_OUT);
-      setRecords([{ error: error.message }]);
-      return error.message;
+      setRecords([{ error: 'Query execution timed out. Please try a simpler query or increase the timeout limit.' }]);
+      return 'Query execution timed out';
     }
 
     // Handle other errors
     setStatus(QueryStatus.ERROR);
     
-    // Transform the error for display
-    const displayError = transformGraphQLErrorToDisplayError(error);
+    // Get a user-friendly error message
+    const userFriendlyMessage = graphqlError.getUserFriendlyMessage();
     
-    if (setRecords) {
-      setRecords([{ error: displayError.message }]);
+    // Add query-specific context if available
+    let errorMessage = userFriendlyMessage;
+    if (graphqlError.graphQLErrors && graphqlError.graphQLErrors.length > 0) {
+      // If there are GraphQL-specific errors, include them in the message
+      const graphqlErrorMessages = graphqlError.graphQLErrors
+        .map(e => e.message || 'Unknown GraphQL error')
+        .join('; ');
+      
+      // Check if the error is likely a Cypher syntax error
+      if (graphqlErrorMessages.toLowerCase().includes('syntax') || 
+          graphqlErrorMessages.toLowerCase().includes('cypher')) {
+        errorMessage = `Cypher syntax error: ${graphqlErrorMessages}`;
+      } else {
+        errorMessage = `GraphQL API error: ${graphqlErrorMessages}`;
+      }
     }
     
-    return displayError.message;
+    if (setRecords) {
+      setRecords([{ error: errorMessage }]);
+    }
+    
+    return errorMessage;
   }
 }
