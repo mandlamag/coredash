@@ -21,7 +21,7 @@
     }
   ],
   "scripts": {
-    "dev": "yarn webpack-dev-server --mode development",
+    "dev": "node --stack-size=4000 ./node_modules/.bin/webpack-dev-server --mode development",
     "prod": "yarn webpack-dev-server --mode production",
     "debug": "yarn --node-options='--inspect' webpack-dev-server --mode development",
     "build": "yarn webpack --mode production --env production && cp -r public/* dist/",
@@ -42,6 +42,7 @@
     "@codemirror/lang-markdown": "^6.1.1",
     "@dnd-kit/core": "^6.0.8",
     "@dnd-kit/sortable": "^7.0.2",
+    "@mui/icons-material": "^7.0.2",
     "@mui/material": "^5.12.3",
     "@mui/styles": "^5.12.3",
     "@mui/x-data-grid": "7.4.0",

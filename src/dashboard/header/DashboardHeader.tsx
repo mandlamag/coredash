@@ -10,7 +10,7 @@ import LedgerCoreAboutButton from './DashboardHeaderAboutButton';
 import { LedgerCoreLogoutButton } from './DashboardHeaderLogoutButton';
 import { LedgerCoreDashboardHeaderDownloadImageButton } from './DashboardHeaderDownloadImageButton';
 import { updateDashboardSetting } from '../../settings/SettingsActions';
-import { DarkModeSwitch } from 'react-toggle-dark-mode';
+import { MoonIconOutline, SunIconOutline } from '@neo4j-ndl/react/icons';
 import { DASHBOARD_HEADER_BUTTON_COLOR } from '../../config/ApplicationConfig';
 import { Tooltip } from '@mui/material';
 import DatabaseSelector from '../../component/DatabaseSelector';
@@ -56,17 +56,17 @@ export const LedgerCoreDashboardHeader = ({
           <div className='n-flex-1'></div>
           <div className='sm:n-flex n-items-center n-justify-end md:n-flex-1 lg:n-w-0'>
             <div className='n-flex n-flex-row'>
-              <Tooltip title={'Change Theme'} disableInteractive>
-                <div>
-                  <DarkModeSwitch
-                    className={'ndl-icon-btn n-p-2 ndl-large ndl-clean'}
-                    style={{}}
-                    checked={isDarkMode}
-                    onChange={toggleDarkMode}
-                    size={24}
-                    sunColor={DASHBOARD_HEADER_BUTTON_COLOR || '#000000'}
-                    moonColor={'#ff0000'}
-                  />
+              <Tooltip title={'Toggle Theme'} disableInteractive>
+                <div
+                  onClick={() => toggleDarkMode(!isDarkMode)}
+                  className={'ndl-icon-btn n-p-2 ndl-large ndl-clean n-cursor-pointer n-rounded-full hover:n-bg-palette-neutral-bg-strong'}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  {isDarkMode ? (
+                    <SunIconOutline style={{ color: '#FF8C00', fontSize: '24px' }} />
+                  ) : (
+                    <MoonIconOutline style={{ color: '#000000', fontSize: '24px' }} />
+                  )}
                 </div>
               </Tooltip>
             </div>

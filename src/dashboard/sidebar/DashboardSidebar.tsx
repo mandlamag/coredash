@@ -273,16 +273,6 @@ export const NeoDashboardSidebar = ({
         position='left'
         type='overlay'
         expanded={expanded}
-        onExpandedChange={(open) => {
-          setOnExpanded(open);
-          if (open) {
-            getDashboardListFromNeo4j();
-          }
-          // Wait until the sidebar has fully opened. Then trigger a resize event to align the grid layout.
-          const timeout = setTimeout(() => {
-            window.dispatchEvent(new Event('resize'));
-          }, 300);
-        }}
       >
         <SideNavigationList>
           <NeoDashboardSidebarDatabaseMenu
