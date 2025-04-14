@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  ledgercore-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5005:5005"
+    environment:
+      # API URLs
+      - API_URL=http://api-server:8080/api
+      - GRAPHQL_API_URL=http://api-server:8080/graphql
+      
+      # Neo4j Connection Defaults
+      - DEFAULT_NEO4J_URL=neo4j
+      - DEFAULT_NEO4J_PORT=7687
+      - DEFAULT_NEO4J_DATABASE=neo4j
+      
+      # Application Settings
+      - DEFAULT_DASHBOARD_TITLE=LedgerCore Dashboard
+      - ALLOW_QUERIES_WITHOUT_LOGIN=true
+      
+      # Branding
+      - DASHBOARD_HEADER_COLOR=#0B297D
+      - DASHBOARD_HEADER_BUTTON_COLOR=#FFFFFF22
+      - DASHBOARD_HEADER_TITLE_COLOR=#FFFFFF
+    restart: unless-stopped
+    networks:
+      - ledgercore-network
+
+  # Example API server (uncomment and configure as needed)
+  # api-server:
+  #   image: your-api-server-image
+  #   ports:
+  #     - "8080:8080"
+  #   networks:
+  #     - ledgercore-network
+
+  # Example Neo4j database (uncomment and configure as needed)
+  # neo4j:
+  #   image: neo4j:5.9.0
+  #   ports:
+  #     - "7474:7474"
+  #     - "7687:7687"
+  #   environment:
+  #     - NEO4J_AUTH=neo4j/password
+  #   volumes:
+  #     - neo4j-data:/data
+  #   networks:
+  #     - ledgercore-network
+
+networks:
+  ledgercore-network:
+    driver: bridge
+
+# Uncomment if using Neo4j
+# volumes:
+#   neo4j-data:

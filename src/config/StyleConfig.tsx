@@ -3,9 +3,14 @@ import { rgbaToHex } from '../chart/Utils';
 export default class StyleConfig {
   private static instance: StyleConfig;
 
-  protected style: any;
+  private _style: any;
 
   private constructor() {}
+  
+  // Public getter for style property
+  public getStyle(): any {
+    return this._style;
+  }
 
   public static async getInstance(): Promise<StyleConfig> {
     if (!this.instance) {
@@ -17,10 +22,10 @@ export default class StyleConfig {
   async initialize() {
     try {
       await (await fetch('style.config.json')).json().then((json) => {
-        this.style = json;
+        this._style = json;
       });
     } catch (e) {
-      this.style = {};
+      this._style = {};
     }
   }
 
@@ -32,14 +37,15 @@ export default class StyleConfig {
   }
 
   public applyCSS() {
-    const rules = this.style?.style || {};
+    const rules = this._style?.style || {};
     for (const [key, value] of Object.entries(rules)) {
       document.documentElement.style.setProperty(key, value);
     }
   }
 
   public complementColor(color: string) {
-    const hexColor = rgbaToHex(document.documentElement.style.getPropertyValue(color));
+    const propValue = document.documentElement.style.getPropertyValue(color) || '';
+    const hexColor = rgbaToHex(propValue);
     const complementColor = (0xffffff - parseInt(hexColor.replace('#', ''), 16)).toString(16);
     return `#${complementColor}`;
   }

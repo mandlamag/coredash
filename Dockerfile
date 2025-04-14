@@ -26,14 +26,17 @@ COPY --from=build-stage /usr/local/src/neodash/dist /usr/share/nginx/html
 COPY ./conf/default.conf.template /etc/nginx/templates/
 COPY ./scripts/config-entrypoint.sh /docker-entrypoint.d/config-entrypoint.sh
 COPY ./scripts/message-entrypoint.sh /docker-entrypoint.d/message-entrypoint.sh
+COPY ./scripts/generate-env-config.sh /docker-entrypoint.d/generate-env-config.sh
 
 RUN chown -R nginx:nginx /var/cache/nginx && \
     chown -R nginx:nginx /var/log/nginx && \
     chown -R nginx:nginx /etc/nginx/conf.d && \
     chown -R nginx:nginx /etc/nginx/templates && \
     chown -R nginx:nginx /docker-entrypoint.d/config-entrypoint.sh && \
+    chown -R nginx:nginx /docker-entrypoint.d/generate-env-config.sh && \
     chmod +x /docker-entrypoint.d/config-entrypoint.sh  && \
-    chmod +x /docker-entrypoint.d/message-entrypoint.sh
+    chmod +x /docker-entrypoint.d/message-entrypoint.sh && \
+    chmod +x /docker-entrypoint.d/generate-env-config.sh
 RUN touch /var/run/nginx.pid && \
     chown -R nginx:nginx /var/run/nginx.pid
 RUN chown -R nginx:nginx /usr/share/nginx/html/
