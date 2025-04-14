@@ -118,16 +118,6 @@ export const NeoWelcomeScreenModal = ({
           )}
 
           <Tooltip title='View a gallery of live examples.' aria-label='demo' disableInteractive>
-            <Button
-              target='_blank'
-              href='https://neodash-gallery.graphapp.io'
-              style={{ marginTop: '10px', width: '100%' }}
-              fill='outlined'
-              color='neutral'
-              size='large'
-            >
-              Try a Demo
-            </Button>
           </Tooltip>
 
           <Tooltip title='Show information about this application.' aria-label='' disableInteractive>
@@ -153,16 +143,6 @@ export const NeoWelcomeScreenModal = ({
           }}
         >
           <div style={{ color: 'white' }}>
-            NeoDash is a tool for building dashboards using GraphQL API. Need advice on building an integrated solution?{' '}
-            <TextLink
-              href='https://neo4j.com/professional-services/'
-              className='n-text-neutral-text-inverse'
-              target='_blank'
-              style={{ color: 'white' }}
-            >
-              Get in touch
-            </TextLink>
-            !
           </div>
         </Dialog.Actions>
       </Dialog>
