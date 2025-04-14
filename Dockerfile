@@ -23,6 +23,8 @@ RUN apk upgrade
 ENV NGINX_PORT=5005
 
 COPY --from=build-stage /usr/local/src/neodash/dist /usr/share/nginx/html
+# Explicitly copy the config directory with default dashboards
+COPY ./public/config /usr/share/nginx/html/config
 COPY ./conf/default.conf.template /etc/nginx/templates/
 COPY ./scripts/config-entrypoint.sh /docker-entrypoint.d/config-entrypoint.sh
 COPY ./scripts/message-entrypoint.sh /docker-entrypoint.d/message-entrypoint.sh
