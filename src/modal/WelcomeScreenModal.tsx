@@ -39,7 +39,7 @@ export const NeoWelcomeScreenModal = ({
     <div>
       <Dialog size='small' open={welcomeScreenOpen} aria-labelledby='form-dialog-title' disableCloseButton>
         <Dialog.Header id='form-dialog-title'>
-          NeoDash - GraphQL API Dashboard Builder
+          LedgerCore - Blochain Dashboard
           <BoltIconSolid className='icon-base' color='gold' style={{ float: 'right' }} />
         </Dialog.Header>
         <Dialog.Content>
@@ -113,25 +113,11 @@ export const NeoWelcomeScreenModal = ({
               color='neutral'
               size='large'
             >
-              Connect to Neo4j Desktop
+              Connect to DB Desktop
             </Button>
           )}
 
-          <Tooltip title='View a gallery of live examples.' aria-label='demo' disableInteractive>
-          </Tooltip>
 
-          <Tooltip title='Show information about this application.' aria-label='' disableInteractive>
-            <Button
-              onClick={onAboutModalOpen}
-              style={{ marginTop: '10px', width: '100%' }}
-              fill='outlined'
-              color='neutral'
-              size='large'
-            >
-              {/**/}
-              About
-            </Button>
-          </Tooltip>
         </Dialog.Content>
         <Dialog.Actions
           style={{
