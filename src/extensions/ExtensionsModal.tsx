@@ -46,14 +46,7 @@ const NeoExtensionsModal = ({
             <div className='n-flex n-flex-col n-gap-token-4 n-divide-y n-divide-neutral-border-strong'>
               <Section>
                 <SectionContent>
-                  <TextLink
-                    externalLink
-                    target='_blank'
-                    href='https://neo4j.com/labs/neodash/2.4/user-guide/extensions/'
-                  >
-                    Extensions
-                  </TextLink>
-                  &nbsp;are a way of extending the core functionality of NeoDash with custom logic. This can be a new
+                  Extensions are a way of extending the core functionality of LedgerCore with custom logic. This can be a new
                   visualization, extra styling options for an existing visualization, or even a completely new logic for
                   the dashboarding engine.
                 </SectionContent>
@@ -114,12 +107,6 @@ const NeoExtensionsModal = ({
                                 <br />
                                 <p>{e.description}</p>
                                 <br />
-                                <p>
-                                  Author:{' '}
-                                  <TextLink externalLink href={e.link}>
-                                    {e.author}
-                                  </TextLink>
-                                </p>
                               </td>
                               <td></td>
                               <td style={{ width: 300 }}>

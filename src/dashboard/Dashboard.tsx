@@ -49,7 +49,6 @@ const Dashboard = ({
           connection={connection}
           onDownloadImage={onDownloadDashboardAsImage}
           onAboutModalOpen={onAboutModalOpen}
-          resetApplication={resetApplication}
         ></LedgerCoreDashboardHeader>
       </div>
       {/* Main Page */}

@@ -1,0 +1,187 @@
+/* Shadcn-inspired styling for LedgerCore Dashboard */
+
+:root {
+  /* Font */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  
+  /* Colors - Light mode */
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 3.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 3.9%;
+  --primary: 24 100% 50%;  /* Orange for LedgerCore */
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 4.8% 95.9%;
+  --secondary-foreground: 240 5.9% 10%;
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --accent: 240 4.8% 95.9%;
+  --accent-foreground: 240 5.9% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 24 100% 50%;  /* Orange for LedgerCore */
+  
+  /* Radius */
+  --radius: 0.5rem;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.dark {
+  /* Colors - Dark mode */
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 24 100% 50%;  /* Orange for LedgerCore */
+  --primary-foreground: 240 5.9% 10%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 24 100% 50%;  /* Orange for LedgerCore */
+}
+
+/* Apply base styles */
+body {
+  font-family: var(--font-sans);
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+/* Card styling */
+.shadcn-card {
+  border-radius: var(--radius);
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  box-shadow: var(--shadow);
+  border: 1px solid hsl(var(--border));
+  overflow: hidden;
+}
+
+.shadcn-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem 1.5rem 0 1.5rem;
+}
+
+.shadcn-card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.shadcn-card-description {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.875rem;
+}
+
+.shadcn-card-content {
+  padding: 1.5rem;
+}
+
+.shadcn-card-footer {
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem 1.5rem 1.5rem;
+  border-top: 1px solid hsl(var(--border));
+}
+
+/* Button styling */
+.shadcn-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  font-weight: 500;
+  font-size: 0.875rem;
+  height: 2.5rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.shadcn-button-primary {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.shadcn-button-primary:hover {
+  opacity: 0.9;
+}
+
+.shadcn-button-secondary {
+  background-color: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+}
+
+.shadcn-button-secondary:hover {
+  opacity: 0.9;
+}
+
+/* Tabs styling */
+.shadcn-tabs {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.shadcn-tabs-list {
+  display: flex;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.shadcn-tabs-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  border-bottom: 2px solid transparent;
+}
+
+.shadcn-tabs-trigger[data-state="active"] {
+  color: hsl(var(--primary));
+  border-bottom-color: hsl(var(--primary));
+}
+
+.shadcn-tabs-content {
+  padding: 1.5rem 0;
+}
+
+/* Input styling */
+.shadcn-input {
+  display: flex;
+  height: 2.5rem;
+  width: 100%;
+  border-radius: var(--radius);
+  border: 1px solid hsl(var(--input));
+  background-color: transparent;
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+}
+
+.shadcn-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.3);
+  border-color: hsl(var(--ring));
+}

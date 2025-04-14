@@ -64,7 +64,7 @@ const NeoCardViewHeader = ({
 
   const theme = createTheme({
     typography: {
-      fontFamily: "'Nunito Sans', sans-serif !important",
+      fontFamily: "'Inter', sans-serif !important",
       allVariants: { color: 'rgb(var(--palette-neutral-text-weak))' },
     },
     palette: {

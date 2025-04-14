@@ -1,0 +1,151 @@
+/* Shadcn UI-inspired component styling for LedgerCore */
+
+/* Card styling */
+.MuiCard-root {
+  border-radius: 0.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  background-color: #fff;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
+  transition: box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .MuiCard-root {
+  background-color: #1f1f1f;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.MuiCard-root:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Card header styling */
+.MuiCardHeader-root {
+  padding: 1.25rem 1.25rem 0.5rem 1.25rem;
+}
+
+.MuiCardHeader-title {
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.025em;
+}
+
+.MuiCardHeader-subheader {
+  font-size: 0.875rem !important;
+  color: rgba(0, 0, 0, 0.6) !important;
+  margin-top: 0.25rem;
+}
+
+.dark .MuiCardHeader-subheader {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Card content styling */
+.MuiCardContent-root {
+  padding: 1rem 1.25rem !important;
+}
+
+/* Card actions styling */
+.MuiCardActions-root {
+  padding: 0.75rem 1.25rem !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark .MuiCardActions-root {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Button styling */
+.MuiButton-root {
+  font-weight: 500 !important;
+  border-radius: 0.375rem !important;
+  height: 2.5rem;
+  padding: 0 1rem !important;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: none !important;
+  font-size: 0.875rem !important;
+}
+
+.MuiButton-contained {
+  background-color: #FF8C00 !important;
+  color: #fff !important;
+}
+
+.MuiButton-contained:hover {
+  background-color: #e67e00 !important;
+}
+
+.MuiButton-outlined {
+  border-color: rgba(0, 0, 0, 0.2) !important;
+}
+
+.dark .MuiButton-outlined {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Input styling */
+.MuiInputBase-root {
+  border-radius: 0.375rem !important;
+  font-size: 0.875rem !important;
+}
+
+.MuiOutlinedInput-root {
+  border: 1px solid rgba(0, 0, 0, 0.2) !important;
+}
+
+.dark .MuiOutlinedInput-root {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.MuiOutlinedInput-root.Mui-focused {
+  border-color: #FF8C00 !important;
+  box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.3) !important;
+}
+
+/* Tabs styling */
+.MuiTabs-root {
+  min-height: 2.5rem !important;
+}
+
+.MuiTab-root {
+  min-height: 2.5rem !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  font-size: 0.875rem !important;
+  padding: 0 1rem !important;
+}
+
+.MuiTabs-indicator {
+  background-color: #FF8C00 !important;
+  height: 2px !important;
+}
+
+/* Table styling */
+.MuiTableCell-root {
+  font-size: 0.875rem !important;
+  padding: 0.75rem 1rem !important;
+}
+
+.MuiTableCell-head {
+  font-weight: 600 !important;
+  background-color: rgba(0, 0, 0, 0.02) !important;
+}
+
+.dark .MuiTableCell-head {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Tooltip styling */
+.MuiTooltip-tooltip {
+  background-color: #1f1f1f !important;
+  color: #fff !important;
+  font-size: 0.75rem !important;
+  padding: 0.5rem 0.75rem !important;
+  border-radius: 0.25rem !important;
+}
+
+.dark .MuiTooltip-tooltip {
+  background-color: #fff !important;
+  color: #1f1f1f !important;
+}

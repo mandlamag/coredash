@@ -6,17 +6,24 @@
     "pagenumber": 0,
     "editable": true,
     "fullscreenEnabled": true,
-    "parameters": {}
+    "parameters": {
+      "neodash_address_id": "34JwtEreQ71fhVYvTBcHnPdExnz213SH6Y",
+      "neodash_transaction_id": null,
+      "neodash_transaction_hash": "b582262caf518f46fa10ebf7299f91239ca54143b7e449231037b92a83ad269b",
+      "neodash_entity_name": null,
+      "neodash_category_name": null
+    },
+    "queryTimeLimit": 60
   },
   "pages": [
     {
-      "title": "Overview",
+      "title": "Overall statistics",
       "reports": [
         {
           "title": "Total Transaction Count",
           "query": "MATCH (tx:Transaction) RETURN count(tx) as TotalTransactions",
-          "width": 6,
-          "height": 2,
+          "width": 3.5,
+          "height": 1.25,
           "x": 0,
           "y": 0,
           "type": "value",
@@ -32,8 +39,8 @@
         {
           "title": "24h Transaction Volume",
           "query": "MATCH (tx:Transaction) WHERE tx.timestamp > datetime() - duration('P1D') RETURN sum(tx.value) as Volume",
-          "width": 6,
-          "height": 2,
+          "width": 3.5,
+          "height": 1.25,
           "x": 6,
           "y": 0,
           "type": "value",
@@ -47,28 +54,10 @@
           }
         },
         {
-          "title": "Transaction Volume Over Time",
-          "query": "MATCH (tx:Transaction) WHERE tx.timestamp > datetime() - duration('P30D') WITH date(tx.timestamp) as day, sum(tx.value) as volume RETURN day, volume ORDER BY day",
-          "width": 6,
-          "height": 4,
-          "x": 0,
-          "y": 2,
-          "type": "line",
-          "selection": {
-            "x": "day",
-            "value": ["volume"]
-          },
-          "settings": {
-            "showLegend": true,
-            "valueFormat": "0,0.00 BTC",
-            "description": "Bitcoin transaction volume over the last 30 days"
-          }
-        },
-        {
           "title": "Largest Transactions",
           "query": "MATCH (tx:Transaction) RETURN tx.hash as TxHash, tx.value as Value, tx.timestamp as Timestamp ORDER BY Value DESC LIMIT 10",
           "width": 6,
-          "height": 4,
+          "height": 2,
           "x": 6,
           "y": 2,
           "type": "table",

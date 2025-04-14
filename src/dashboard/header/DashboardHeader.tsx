@@ -24,7 +24,6 @@ export const LedgerCoreDashboardHeader = ({
   onConnectionModalOpen,
   onDownloadImage,
   onAboutModalOpen,
-  resetApplication,
   themeMode,
   setTheme,
   isConnected,
@@ -52,7 +51,7 @@ export const LedgerCoreDashboardHeader = ({
     <div className='n-relative n-bg-palette-neutral-bg-weak n-w-full'>
       <div className='n-min-w-full'>
         <div className='n-flex n-justify-between n-h-16 n-items-center n-py-6 md:n-justify-start md:n-space-x-10 n-mx-4'>
-          <LedgerCoreDashboardHeaderLogo resetApplication={resetApplication} />
+          <LedgerCoreDashboardHeaderLogo />
           <div className='n-flex-1'></div>
           <div className='sm:n-flex n-items-center n-justify-end md:n-flex-1 lg:n-w-0'>
             <div className='n-flex n-flex-row'>

@@ -95,8 +95,7 @@ export const NeoDashboardSidebar = ({
   standaloneSettings,
 }) => {
   const { driver } = useContext<Neo4jContextState>(Neo4jContext);
-  // Always keep sidebar collapsed
-  const expanded = false;
+  const [expanded, setOnExpanded] = useState(false);
   const [selectedDashboardIndex, setSelectedDashboardIndex] = React.useState(UNSAVED_DASHBOARD_INDEX);
   const [dashboardDatabase, setDashboardDatabase] = React.useState(database ? database : 'neo4j');
   const [databases, setDatabases] = useState([]);
@@ -107,6 +106,8 @@ export const NeoDashboardSidebar = ({
   const [modalOpen, setModalOpen] = useState(Modal.NONE);
   const [dashboards, setDashboards] = React.useState([]);
   const [cachedDashboard, setCachedDashboard] = React.useState('');
+
+  readonly=true
 
   const getDashboardListFromNeo4j = () => {
     // Retrieves list of all dashboards stored in a given database.
@@ -273,6 +274,16 @@ export const NeoDashboardSidebar = ({
         position='left'
         type='overlay'
         expanded={expanded}
+        onExpandedChange={(open) => {
+          setOnExpanded(open);
+          if (open) {
+            getDashboardListFromNeo4j();
+          }
+          // Wait until the sidebar has fully opened. Then trigger a resize event to align the grid layout.
+          const timeout = setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+          }, 300);
+        }}
       >
         <SideNavigationList>
           <NeoDashboardSidebarDatabaseMenu

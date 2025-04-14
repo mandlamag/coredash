@@ -29,7 +29,7 @@ const TABLE_ROW_HEIGHT = 52;
 const HIDDEN_COLUMN_PREFIX = '__';
 const theme = createTheme({
   typography: {
-    fontFamily: "'Nunito Sans', sans-serif !important",
+    fontFamily: "Inter, sans-serif !important",
     allVariants: { color: 'rgb(var(--palette-neutral-text-default))' },
   },
 });

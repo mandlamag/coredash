@@ -4,7 +4,7 @@ export const lightTheme = createTheme({
     mode: 'light',
   },
   typography: {
-    fontFamily: "'Nunito Sans', sans-serif !important",
+    fontFamily: "'Inter', sans-serif !important",
   },
   breakpoints: {
     values: {
