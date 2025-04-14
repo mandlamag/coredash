@@ -8,12 +8,12 @@ services:
     ports:
       - "5005:5005"
     environment:
-      # API URLs
-      - API_URL=http://api-server:8080/api
-      - GRAPHQL_API_URL=http://api-server:8080/graphql
+      # API URLs - Using the hosted API
+      - API_URL=https://dashboard-db.ledgercore.io/api
+      - GRAPHQL_API_URL=https://dashboard-db.ledgercore.io/graphql
       
-      # Neo4j Connection Defaults
-      - DEFAULT_NEO4J_URL=neo4j
+      # Neo4j Connection Defaults - These are handled by the hosted API
+      - DEFAULT_NEO4J_URL=remote
       - DEFAULT_NEO4J_PORT=7687
       - DEFAULT_NEO4J_DATABASE=neo4j
       
@@ -29,13 +29,7 @@ services:
     networks:
       - ledgercore-network
 
-  # Example API server (uncomment and configure as needed)
-  # api-server:
-  #   image: your-api-server-image
-  #   ports:
-  #     - "8080:8080"
-  #   networks:
-  #     - ledgercore-network
+  # Using hosted API at https://dashboard-db.ledgercore.io/ instead of local API server
 
   # Example Neo4j database (uncomment and configure as needed)
   # neo4j:
