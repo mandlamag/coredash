@@ -6,7 +6,7 @@
     "editable": true,
     "fullscreenEnabled": true,
     "parameters": {
-      "neodash_address_id": "34JwtEreQ71fhVYvTBcHnPdExnz213SH6Y",
+      "query_address_id": "34JwtEreQ71fhVYvTBcHnPdExnz213SH6Y",
       "neodash_transaction_id": null,
       "neodash_transaction_hash": "b582262caf518f46fa10ebf7299f91239ca54143b7e449231037b92a83ad269b"
     },
@@ -104,7 +104,7 @@
         },
         {
           "title": "Addresses with the highest incoming flow within last 24 hours",
-          "query": "MATCH (a:Address)\n// incoming flow\nMATCH (a)<-[in:SENT]-(it:Transaction)<-[inback:SENT]-(inbackAddress)\nWHERE datetime() - duration({hours:24}) <= it.timestamp\nWITH a, collect(distinct in) AS incomingTransactions, collect(distinct CASE WHEN inbackAddress = a THEN inback END) AS returnedChange\nWITH a, apoc.coll.sum([t in incomingTransactions | t.valueUSD]) AS incomingTotal, apoc.coll.sum([t in returnedChange | t.valueUSD]) AS returnedTotal\nWITH a, coalesce(incomingTotal,0.0) - coalesce(returnedTotal,0.0) AS incomingFlowUSD\nORDER BY incomingFlowUSD DESC\nLIMIT 100\nRETURN a.id AS address, incomingFlowUSD\n",
+          "query": "MATCH (t:Transaction)-[:RECEIVED]->(a:Address)\nWHERE t.timestamp >= datetime() - duration({hours:24})\nOPTIONAL MATCH (t)-[:RECEIVED]->(otherAddress:Address)\nWITH a, sum(t.flowUSD) AS incomingTotal, sum(CASE WHEN otherAddress = a THEN t.flowUSD ELSE 0 END) AS returnedChange\nWITH a, incomingTotal - coalesce(returnedChange, 0.0) AS incomingFlowUSD\nORDER BY incomingFlowUSD DESC\nLIMIT 100\nRETURN a.id AS address, incomingFlowUSD\n\n\n",
           "width": "6",
           "type": "table",
           "height": "3",
@@ -130,12 +130,12 @@
             "type": "Node Property",
             "entityType": "Address",
             "propertyType": "id",
-            "parameterName": "neodash_address_id"
+            "parameterName": "query_address_id"
           }
         },
         {
           "title": "Total outgoing volume in USD",
-          "query": "MATCH (a:Address)\nWHERE a.id = $neodash_address_id\n// outgoing flow\nOPTIONAL MATCH (a)-[out:SENT]->(ot:Transaction)-[outback:SENT]->(outbackAddress)\nWITH a, collect(distinct out) AS outgoingTransactions, collect(distinct CASE WHEN outbackAddress = a THEN outback END) AS returnedChange\nWITH a, apoc.coll.sum([t in outgoingTransactions | t.valueUSD]) AS outgoingTotal, apoc.coll.sum([t in returnedChange | t.valueUSD]) AS returnedTotal\nWITH a, coalesce(outgoingTotal,0.0) - coalesce(returnedTotal,0.0) AS outgoingFlowUSD\nRETURN outgoingFlowUSD",
+          "query": "MATCH (a:Address)\nWHERE a.id = $query_address_id\n// outgoing flow\nOPTIONAL MATCH (a)-[out:SENT]->(ot:Transaction)-[outback:SENT]->(outbackAddress)\nWITH a, collect(distinct out) AS outgoingTransactions, collect(distinct CASE WHEN outbackAddress = a THEN outback END) AS returnedChange\nWITH a, apoc.coll.sum([t in outgoingTransactions | t.valueUSD]) AS outgoingTotal, apoc.coll.sum([t in returnedChange | t.valueUSD]) AS returnedTotal\nWITH a, coalesce(outgoingTotal,0.0) - coalesce(returnedTotal,0.0) AS outgoingFlowUSD\nRETURN outgoingFlowUSD",
           "width": "4",
           "type": "value",
           "height": "1.25",
@@ -147,7 +147,7 @@
         },
         {
           "title": "Total incoming volume in USD",
-          "query": "MATCH (a:Address)\nWHERE a.id = $neodash_address_id\n// outgoing flow\nOPTIONAL MATCH (a)<-[in:SENT]-(it:Transaction)<-[inback:SENT]-(inbackAddress)\nWITH a, collect(distinct in) AS outgoingTransactions, collect(distinct CASE WHEN inbackAddress = a THEN inback END) AS returnedChange\nWITH a, apoc.coll.sum([t in outgoingTransactions | t.valueUSD]) AS incomingTotal, apoc.coll.sum([t in returnedChange | t.valueUSD]) AS returnedTotal\nWITH a, coalesce(incomingTotal,0.0) - coalesce(returnedTotal,0.0) AS incomingFlowUSD\nRETURN incomingFlowUSD",
+          "query": "MATCH (a:Address)\nWHERE a.id = $query_address_id\n// outgoing flow\nOPTIONAL MATCH (a)<-[in:SENT]-(it:Transaction)<-[inback:SENT]-(inbackAddress)\nWITH a, collect(distinct in) AS outgoingTransactions, collect(distinct CASE WHEN inbackAddress = a THEN inback END) AS returnedChange\nWITH a, apoc.coll.sum([t in outgoingTransactions | t.valueUSD]) AS incomingTotal, apoc.coll.sum([t in returnedChange | t.valueUSD]) AS returnedTotal\nWITH a, coalesce(incomingTotal,0.0) - coalesce(returnedTotal,0.0) AS incomingFlowUSD\nRETURN incomingFlowUSD",
           "width": "4",
           "type": "value",
           "height": "1.25",
@@ -159,7 +159,7 @@
         },
         {
           "title": "Largest outgoing transactions",
-          "query": "MATCH (a:Address)-[r:SENT]->(t:Transaction)\nWHERE a.id = $neodash_address_id\nRETURN t.hash AS transactionHash, r.valueUSD AS outgoingUSD,r.valueBTC AS outgoingBTC, t.timestamp AS date\nORDER BY outgoingUSD DESC\nLIMIT 100\n\n\n",
+          "query": "MATCH (a:Address)-[r:SENT]->(t:Transaction)\nWHERE a.id = $query_address_id\nRETURN t.hash AS transactionHash, r.valueUSD AS outgoingUSD,r.valueBTC AS outgoingBTC, t.timestamp AS date\nORDER BY outgoingUSD DESC\nLIMIT 100\n\n\n",
           "width": "6",
           "type": "table",
           "height": "3",
@@ -170,7 +170,7 @@
         },
         {
           "title": "Largest incoming transactions",
-          "query": "MATCH (a:Address)<-[r:SENT]-(t:Transaction)\nWHERE a.id = $neodash_address_id\nRETURN t.hash AS transactionHash, r.valueUSD AS incomingUSD,r.valueBTC AS incomingBTC, t.timestamp AS date\nORDER BY incomingUSD DESC\nLIMIT 100\n\n\n\n\n",
+          "query": "MATCH (a:Address)<-[r:SENT]-(t:Transaction)\nWHERE a.id = $query_address_id\nRETURN t.hash AS transactionHash, r.valueUSD AS incomingUSD,r.valueBTC AS incomingBTC, t.timestamp AS date\nORDER BY incomingUSD DESC\nLIMIT 100\n\n\n\n\n",
           "width": "6",
           "type": "table",
           "height": "3",
