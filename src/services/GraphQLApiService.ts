@@ -240,11 +240,20 @@ export class GraphQLApiService {
     console.log(`Headers:`, JSON.stringify(this.headers, null, 2));
     console.log(`API Endpoint: ${this.apiEndpoint}`);
     
+    // Ensure required parameters always have a default value
+    const safeParameters = { ...parameters };
+    
+    // Check for $input parameter in query and ensure it has a default value
+    if (cypherQuery.includes('$input') && (!('input' in safeParameters) || safeParameters.input === undefined)) {
+      console.log('Adding default empty string for $input parameter');
+      safeParameters.input = '';
+    }
+    
     // Handle special queries that the GraphQL API might need special handling for
     if (this.isSpecialQuery(cypherQuery)) {
       console.log('Query identified as special query, using special handling');
       try {
-        const result = await this.handleSpecialQuery(cypherQuery, parameters);
+        const result = await this.handleSpecialQuery(cypherQuery, safeParameters);
         console.log(`Request completed in ${Date.now() - startTime}ms`);
         console.log('=== GRAPHQL API REQUEST END (SPECIAL HANDLING) ===');
         return result;
@@ -263,15 +272,15 @@ export class GraphQLApiService {
                             cypherQuery.includes('{') ||
                             cypherQuery.includes('}');
       
-      // Use triple quotes for complex queries to preserve formatting and special characters
+      // For complex queries with triple quotes, use a different approach
       let graphqlQuery;
       if (isComplexQuery) {
         console.log('Using triple quotes for complex query');
+        const tripleQuotedQuery = `"""${cypherQuery}"""`;
+        
         graphqlQuery = gql`
-          query {
-            executeCypherQuery(query: """
-              ${cypherQuery}
-            """) {
+          query ExecuteCypherQuery($parameters: JSON) {
+            executeCypherQuery(query: ${tripleQuotedQuery}, parameters: $parameters) {
               records
               summary {
                 resultAvailableAfter
@@ -287,8 +296,8 @@ export class GraphQLApiService {
         console.log(`Formatted query: ${formattedQuery}`);
         
         graphqlQuery = gql`
-          query {
-            executeCypherQuery(query: ${formattedQuery}) {
+          query ExecuteCypherQuery($parameters: JSON) {
+            executeCypherQuery(query: ${formattedQuery}, parameters: $parameters) {
               records
               summary {
                 resultAvailableAfter
@@ -312,7 +321,7 @@ export class GraphQLApiService {
       console.time('GraphQL API Request Duration');
       
       // Execute the query against the GraphQL API
-      const response = await this.client.request(graphqlQuery) as { executeCypherQuery: any };
+      const response = await this.client.request(graphqlQuery, { parameters: safeParameters }) as { executeCypherQuery: any };
       
       console.timeEnd('GraphQL API Request Duration');
       console.log('GraphQL API Response received');
