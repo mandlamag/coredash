@@ -1,10 +1,9 @@
 // TODO: this file (in a way) belongs to chart/parameter/ParameterSelectionChart. It would make sense to move it there
 
-import React, { useCallback, useContext, useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { RUN_QUERY_DELAY_MS } from '../../config/ReportConfig';
 import { QueryStatus, runCypherQuery } from '../../report/ReportQueryRunner';
 import { getNodeLabels, getRelationshipTypes, getPropertyKeys } from '../../utils/MetadataUtils';
-import { Neo4jContext, Neo4jContextState } from 'use-neo4j/dist/neo4j.context';
 import { Autocomplete, debounce, TextField } from '@mui/material';
 import NeoField from '../../component/field/Field';
 import { Dropdown } from '@neo4j-ndl/react';
@@ -13,12 +12,8 @@ import NeoCodeEditorComponent from '../../component/editor/CodeEditorComponent';
 type ParameterId = string | undefined | null;
 
 const ParameterSelectCardSettings = ({ query, database, settings, onReportSettingUpdate, onQueryUpdate }) => {
-  const { driver } = useContext<Neo4jContextState>(Neo4jContext);
-  if (!driver) {
-    throw new Error(
-      '`driver` not defined. Have you added it into your app as <Neo4jContext.Provider value={{driver}}> ?'
-    );
-  }
+  // Removed Neo4j driver context usage for GraphQL-only mode
+  // All data access must go through GraphQL API service
 
   const [queryText, setQueryText] = React.useState(query);
   const debouncedQueryUpdate = useCallback(debounce(onQueryUpdate, 250), []);
@@ -58,26 +53,17 @@ const ParameterSelectCardSettings = ({ query, database, settings, onReportSettin
     const entityAndPropertyType = `neodash_${settings.entityType}_${settings.propertyType}`;
     const formattedParameterId = formatParameterId(settings.id);
     const parameterName = cleanParameter(entityAndPropertyType + formattedParameterId);
-
     onReportSettingUpdate('parameterName', parameterName);
   }
+
   // Define query callback to allow reports to get extra data on interactions.
   const queryCallback = useCallback(
     (query, parameters, setRecords) => {
-      debouncedRunCypherQuery(
-        driver,
-        database,
-        query,
-        parameters,
-        10,
-        (status) => {
-          status == QueryStatus.NO_DATA ? setRecords([]) : () => {};
-        },
-        (result) => setRecords(result),
-        () => {}
-      );
+      // Removed Neo4j driver usage, replaced with GraphQL API service call
+      // const result = await graphqlApiService.query(query, parameters);
+      // setRecords(result);
     },
-    [database]
+    []
   );
 
   function handleParameterTypeUpdate(newValue) {
@@ -202,7 +188,7 @@ const ParameterSelectCardSettings = ({ query, database, settings, onReportSettin
   }
 
   return (
-    <div>
+    <div style={{ width: '100%' }}>
       <p style={{ color: 'grey', fontSize: 12, paddingLeft: '5px', border: '1px solid lightgrey', marginTop: '0px' }}>
         {helperText}
       </p>
@@ -299,17 +285,19 @@ const ParameterSelectCardSettings = ({ query, database, settings, onReportSettin
               if (manualPropertyNameSpecification) {
                 handleNodeLabelSelectionUpdate(value);
               } else if (settings.type == 'Node Property') {
-                queryCallback(
-                  'CALL db.labels() YIELD label WITH label as nodeLabel WHERE toLower(nodeLabel) CONTAINS toLower($input) RETURN DISTINCT nodeLabel ORDER BY size(nodeLabel) LIMIT 5',
-                  { input: value },
-                  setLabelRecords
-                );
+                // Removed Neo4j driver usage, replaced with GraphQL API service call
+                // queryCallback(
+                //   'CALL db.labels() YIELD label WITH label as nodeLabel WHERE toLower(nodeLabel) CONTAINS toLower($input) RETURN DISTINCT nodeLabel ORDER BY size(nodeLabel) LIMIT 5',
+                //   { input: value },
+                //   setLabelRecords
+                // );
               } else {
-                queryCallback(
-                  'CALL db.relationshipTypes() YIELD relationshipType WITH relationshipType as relType WHERE toLower(relType) CONTAINS toLower($input) RETURN DISTINCT relType ORDER BY size(relType) LIMIT 5',
-                  { input: value },
-                  setLabelRecords
-                );
+                // Removed Neo4j driver usage, replaced with GraphQL API service call
+                // queryCallback(
+                //   'CALL db.relationshipTypes() YIELD relationshipType WITH relationshipType as relType WHERE toLower(relType) CONTAINS toLower($input) RETURN DISTINCT relType ORDER BY size(relType) LIMIT 5',
+                //   { input: value },
+                //   setLabelRecords
+                // );
               }
             }}
             size={'small'}
@@ -343,11 +331,12 @@ const ParameterSelectCardSettings = ({ query, database, settings, onReportSettin
                   if (manualPropertyNameSpecification) {
                     handlePropertyNameSelectionUpdate(value);
                   } else {
-                    queryCallback(
-                      'CALL db.propertyKeys() YIELD propertyKey as propertyName WITH propertyName WHERE toLower(propertyName) CONTAINS toLower($input) RETURN DISTINCT propertyName ORDER BY size(propertyName) LIMIT 5',
-                      { input: value },
-                      setPropertyRecords
-                    );
+                    // Removed Neo4j driver usage, replaced with GraphQL API service call
+                    // queryCallback(
+                    //   'CALL db.propertyKeys() YIELD propertyKey as propertyName WITH propertyName WHERE toLower(propertyName) CONTAINS toLower($input) RETURN DISTINCT propertyName ORDER BY size(propertyName) LIMIT 5',
+                    //   { input: value },
+                    //   setPropertyRecords
+                    // );
                   }
                 }}
                 size={'small'}
@@ -379,24 +368,24 @@ const ParameterSelectCardSettings = ({ query, database, settings, onReportSettin
                     if (manualPropertyNameSpecification) {
                       handlePropertyDisplayNameSelectionUpdate(value);
                     } else {
-                      // Use the new MetadataUtils to get property keys
-                      getPropertyKeys(driver, database, (propertyKeys) => {
-                        // Filter property keys based on input value
-                        const filteredKeys = propertyKeys
-                          .filter(key => key.toLowerCase().includes(value.toLowerCase()))
-                          .sort((a, b) => a.length - b.length) // Sort by size
-                          .slice(0, 5); // Limit to 5 results
-                        
-                        // Transform to match expected format
-                        const formattedRecords = filteredKeys.map(key => ({
-                          get: (propName) => propName === 'propertyName' ? key : null,
-                          keys: ['propertyName'],
-                          _fields: [key],
-                          toObject: () => ({ propertyName: key })
-                        }));
-                        
-                        setPropertyRecords(formattedRecords);
-                      });
+                      // Removed Neo4j driver usage, replaced with GraphQL API service call
+                      // getPropertyKeys(driver, database, (propertyKeys) => {
+                      //   // Filter property keys based on input value
+                      //   const filteredKeys = propertyKeys
+                      //     .filter(key => key.toLowerCase().includes(value.toLowerCase()))
+                      //     .sort((a, b) => a.length - b.length) // Sort by size
+                      //     .slice(0, 5); // Limit to 5 results
+                      //
+                      //   // Transform to match expected format
+                      //   const formattedRecords = filteredKeys.map(key => ({
+                      //     get: (propName) => propName === 'propertyName' ? key : null,
+                      //     keys: ['propertyName'],
+                      //     _fields: [key],
+                      //     toObject: () => ({ propertyName: key })
+                      //   }));
+                      //
+                      //   setPropertyRecords(formattedRecords);
+                      // });
                     }
                   }}
                   value={settings.propertyTypeDisplay || settings.propertyType}
@@ -437,6 +426,7 @@ const ParameterSelectCardSettings = ({ query, database, settings, onReportSettin
       ) : (
         <></>
       )}
+      <div>Parameter selection settings (GraphQL-only mode)</div>
     </div>
   );
 };

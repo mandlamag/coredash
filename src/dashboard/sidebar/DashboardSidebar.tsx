@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useState } from 'react';
 import { connect } from 'react-redux';
 import { getDashboardIsEditable, getPageNumber } from '../../settings/SettingsSelectors';
 import { getDashboardSettings, getDashboardTitle } from '../DashboardSelectors';
@@ -27,14 +27,8 @@ import NeoDashboardSidebarCreateModal from './modal/DashboardSidebarCreateModal'
 import NeoDashboardSidebarDatabaseMenu from './menu/DashboardSidebarDatabaseMenu';
 import NeoDashboardSidebarDashboardMenu from './menu/DashboardSidebarDashboardMenu';
 import {
-  deleteDashboardFromNeo4jThunk,
-  loadDashboardFromNeo4jThunk,
-  loadDashboardListFromNeo4jThunk,
   loadDashboardThunk,
-  loadDatabaseListFromNeo4jThunk,
-  saveDashboardToNeo4jThunk,
 } from '../DashboardThunks';
-import { Neo4jContext, Neo4jContextState } from 'use-neo4j/dist/neo4j.context';
 import NeoDashboardSidebarSaveModal from './modal/DashboardSidebarSaveModal';
 import { getDashboardJson } from '../../modal/ModalSelectors';
 import NeoDashboardSidebarCreateMenu from './menu/DashboardSidebarCreateMenu';
@@ -59,16 +53,15 @@ enum Menu {
 // Which (large) pop-up modal is currently open for the sidebar.
 enum Modal {
   CREATE = 0,
-  IMPORT = 1,
-  EXPORT = 2,
-  DELETE = 3,
-  SHARE = 4,
-  SHARE_LEGACY = 5,
-  INFO = 6,
-  LOAD = 7,
-  SAVE = 8,
+  LOAD = 1,
+  SAVE = 2,
+  EXPORT = 3,
+  DELETE = 4,
+  INFO = 5,
+  SHARE = 6,
+  ACCESS = 7,
+  SHARE_LEGACY = 8,
   NONE = 9,
-  ACCESS = 10,
 }
 
 // We use "index = -1" to represent a non-saved draft dashboard in the sidebar's dashboard list.
@@ -87,14 +80,8 @@ export const NeoDashboardSidebar = ({
   dashboard,
   resetLocalDashboard,
   loadDashboard,
-  loadDatabaseListFromNeo4j,
-  loadDashboardListFromNeo4j,
-  loadDashboardFromNeo4j,
-  saveDashboardToNeo4j,
-  deleteDashboardFromNeo4j,
   standaloneSettings,
 }) => {
-  const { driver } = useContext<Neo4jContextState>(Neo4jContext);
   const [expanded, setOnExpanded] = useState(false);
   const [selectedDashboardIndex, setSelectedDashboardIndex] = React.useState(UNSAVED_DASHBOARD_INDEX);
   const [dashboardDatabase, setDashboardDatabase] = React.useState(database ? database : 'neo4j');
@@ -111,19 +98,18 @@ export const NeoDashboardSidebar = ({
 
   const getDashboardListFromNeo4j = () => {
     // Retrieves list of all dashboards stored in a given database.
-    loadDashboardListFromNeo4j(driver, dashboardDatabase, (list) => {
-      setDashboards(list);
+    // This function is a placeholder and should be replaced with a GraphQL API call
+    setDashboards([]);
 
-      // Update the UI to reflect the currently selected dashboard.
-      if (dashboard && dashboard.uuid) {
-        const index = list.findIndex((element) => element.uuid == dashboard.uuid);
-        setSelectedDashboardIndex(index);
-        if (index == UNSAVED_DASHBOARD_INDEX) {
-          // If we can't find the currently dashboard in the database, we are drafting a new one.
-          setDraft(true);
-        }
+    // Update the UI to reflect the currently selected dashboard.
+    if (dashboard && dashboard.uuid) {
+      const index = dashboards.findIndex((element) => element.uuid == dashboard.uuid);
+      setSelectedDashboardIndex(index);
+      if (index == UNSAVED_DASHBOARD_INDEX) {
+        // If we can't find the currently dashboard in the database, we are drafting a new one.
+        setDraft(true);
       }
-    });
+    }
   };
 
   function createDashboard() {
@@ -134,17 +120,16 @@ export const NeoDashboardSidebar = ({
 
   function deleteDashboard(uuid) {
     // Creates new dashboard in draft state (not yet saved to Neo4j)
-    deleteDashboardFromNeo4j(driver, dashboardDatabase, uuid, () => {
-      if (uuid == dashboard.uuid) {
-        setSelectedDashboardIndex(UNSAVED_DASHBOARD_INDEX);
-        resetLocalDashboard();
-        loadDashboardListFromNeo4j();
-        setDraft(true);
-      }
-      setTimeout(() => {
-        getDashboardListFromNeo4j();
-      }, 100);
-    });
+    // This function is a placeholder and should be replaced with a GraphQL API call
+    if (uuid == dashboard.uuid) {
+      setSelectedDashboardIndex(UNSAVED_DASHBOARD_INDEX);
+      resetLocalDashboard();
+      getDashboardListFromNeo4j();
+      setDraft(true);
+    }
+    setTimeout(() => {
+      getDashboardListFromNeo4j();
+    }, 100);
   }
 
   return (
@@ -152,23 +137,15 @@ export const NeoDashboardSidebar = ({
       <NeoDashboardSidebarSaveModal
         open={modalOpen == Modal.SAVE}
         onConfirm={() => {
-          saveDashboardToNeo4j(
-            driver,
-            dashboardDatabase,
-            dashboard,
-            new Date().toISOString(),
-            connection.username,
-            () => {
-              // After saving successfully, refresh the list after a small delay.
-              // The new dashboard will always be on top (the latest), so we select index 0.
-              setDashboards([]);
-              setTimeout(() => {
-                getDashboardListFromNeo4j();
-                setSelectedDashboardIndex(0);
-                setDraft(false);
-              }, 100);
-            }
-          );
+          // This function is a placeholder and should be replaced with a GraphQL API call
+          // After saving successfully, refresh the list after a small delay.
+          // The new dashboard will always be on top (the latest), so we select index 0.
+          setDashboards([]);
+          setTimeout(() => {
+            getDashboardListFromNeo4j();
+            setSelectedDashboardIndex(0);
+            setDraft(false);
+          }, 100);
         }}
         overwrite={selectedDashboardIndex >= 0}
         handleClose={() => setModalOpen(Modal.NONE)}
@@ -185,11 +162,9 @@ export const NeoDashboardSidebar = ({
             // Load one of the dashboards from the database.
             setModalOpen(Modal.LOAD);
             const { uuid } = dashboards[inspectedIndex];
-            loadDashboardFromNeo4j(driver, dashboardDatabase, uuid, (file) => {
-              setDraft(false);
-              loadDashboard(uuid, file);
-              setSelectedDashboardIndex(inspectedIndex);
-            });
+            // This function is a placeholder and should be replaced with a GraphQL API call
+            loadDashboard(uuid, '');
+            setSelectedDashboardIndex(inspectedIndex);
           }
         }}
         handleClose={() => setModalOpen(Modal.NONE)}
@@ -292,12 +267,7 @@ export const NeoDashboardSidebar = ({
             setSelected={(newDatabase) => {
               setDashboardDatabase(newDatabase);
               // We changed the active dashboard database, reload the list in the sidebar.
-              loadDashboardListFromNeo4j(driver, newDatabase, (list) => {
-                setDashboards(list);
-                if (!readonly) {
-                  setDraft(true);
-                }
-              });
+              getDashboardListFromNeo4j();
             }}
             open={menuOpen == Menu.DATABASE}
             anchorEl={menuAnchor}
@@ -312,10 +282,6 @@ export const NeoDashboardSidebar = ({
             anchorEl={menuAnchor}
             handleInfoClicked={() => {
               setMenuOpen(Menu.NONE);
-              const d = dashboards[inspectedIndex];
-              loadDashboardFromNeo4j(driver, dashboardDatabase, d.uuid, (text) => {
-                setCachedDashboard(JSON.parse(text));
-              });
               setModalOpen(Modal.INFO);
             }}
             handleDiscardClicked={() => {
@@ -332,18 +298,12 @@ export const NeoDashboardSidebar = ({
                 setModalOpen(Modal.LOAD);
               } else {
                 const d = dashboards[inspectedIndex];
-                loadDashboardFromNeo4j(driver, dashboardDatabase, d.uuid, (file) => {
-                  loadDashboard(d.uuid, file);
-                  setSelectedDashboardIndex(inspectedIndex);
-                });
+                loadDashboard(d.uuid, '');
+                setSelectedDashboardIndex(inspectedIndex);
               }
             }}
             handleExportClicked={() => {
               setMenuOpen(Menu.NONE);
-              const d = dashboards[inspectedIndex];
-              loadDashboardFromNeo4j(driver, dashboardDatabase, d.uuid, (text) => {
-                setCachedDashboard(JSON.parse(text));
-              });
               setModalOpen(Modal.EXPORT);
             }}
             handleShareClicked={() => {
@@ -409,9 +369,7 @@ export const NeoDashboardSidebar = ({
                     // When reloading, if the dashboard is not in DRAFT mode, we can directly refresh it.
                     if (!draft) {
                       const d = dashboards[selectedDashboardIndex];
-                      loadDashboardFromNeo4j(driver, dashboardDatabase, d.uuid, (file) => {
-                        loadDashboard(d.uuid, file);
-                      });
+                      loadDashboard(d.uuid, '');
                     }
                   }}
                 >
@@ -438,17 +396,8 @@ export const NeoDashboardSidebar = ({
                         setMenuOpen(Menu.DATABASE);
                         // Only when not yet retrieved, and needed, get the list of databases from Neo4j.
                         if (databases.length == 0) {
-                          loadDatabaseListFromNeo4j(driver, (result) => {
-                            if (
-                              readonly &&
-                              standaloneSettings.standaloneMultiDatabase &&
-                              standaloneSettings.standaloneDatabaseList
-                            ) {
-                              let tmp = standaloneSettings.standaloneDatabaseList.split(',').map((x) => x.trim());
-                              result = result.filter((value) => tmp.includes(value));
-                            }
-                            setDatabases(result);
-                          });
+                          // This function is a placeholder and should be replaced with a GraphQL API call
+                          setDatabases([]);
                         }
                         setMenuAnchor(event.currentTarget);
                       }}
@@ -534,10 +483,8 @@ export const NeoDashboardSidebar = ({
                       setInspectedIndex(d.index);
                       setModalOpen(Modal.LOAD);
                     } else {
-                      loadDashboardFromNeo4j(driver, dashboardDatabase, d.uuid, (file) => {
-                        loadDashboard(d.uuid, file);
-                        setSelectedDashboardIndex(d.index);
-                      });
+                      loadDashboard(d.uuid, '');
+                      setSelectedDashboardIndex(d.index);
                     }
                   }}
                   onSettingsOpen={(event) => {
@@ -554,35 +501,24 @@ export const NeoDashboardSidebar = ({
   );
 };
 
-const mapStateToProps = (state) => ({
-  readonly: applicationIsStandalone(state),
-  connection: applicationGetConnection(state),
-  pagenumber: getPageNumber(state),
-  title: getDashboardTitle(state),
-  editable: getDashboardIsEditable(state),
-  draft: dashboardIsDraft(state),
-  dashboard: getDashboardJson(state),
-  dashboardSettings: getDashboardSettings(state),
-  database: applicationGetConnectionDatabase(state),
-  standaloneSettings: applicationGetStandaloneSettings(state),
-});
+const mapStateToProps = (state) => {
+  return {
+    database: applicationGetConnectionDatabase(state),
+    connection: applicationGetConnection(state),
+    readonly: !getDashboardIsEditable(state),
+    draft: dashboardIsDraft(state),
+    title: getDashboardTitle(state),
+    dashboard: getDashboardSettings(state),
+    standaloneSettings: applicationGetStandaloneSettings(state),
+  };
+};
 
-const mapDispatchToProps = (dispatch) => ({
-  onRemovePressed: (id) => dispatch(removeReportThunk(id)),
-  resetLocalDashboard: () => dispatch(resetDashboardState()),
-  setDraft: (draft) => dispatch(setDraft(draft)),
-  loadDashboard: (uuid, text) => dispatch(loadDashboardThunk(uuid, text)),
-  loadDatabaseListFromNeo4j: (driver, callback) => dispatch(loadDatabaseListFromNeo4jThunk(driver, callback)),
-  loadDashboardFromNeo4j: (driver, database, uuid, callback) =>
-    dispatch(loadDashboardFromNeo4jThunk(driver, database, uuid, callback)),
-  loadDashboardListFromNeo4j: (driver, database, callback) =>
-    dispatch(loadDashboardListFromNeo4jThunk(driver, database, callback)),
-  saveDashboardToNeo4j: (driver: any, database: string, dashboard: any, date: any, user: any, onSuccess) => {
-    dispatch(saveDashboardToNeo4jThunk(driver, database, dashboard, date, user, onSuccess));
-  },
-  deleteDashboardFromNeo4j: (driver: any, database: string, uuid: string, onSuccess) => {
-    dispatch(deleteDashboardFromNeo4jThunk(driver, database, uuid, onSuccess));
-  },
-});
+const mapDispatchToProps = (dispatch) => {
+  return {
+    setDraft: (draft) => dispatch(setDraft(draft)),
+    resetLocalDashboard: () => dispatch(resetDashboardState()),
+    loadDashboard: (dashboard) => dispatch(loadDashboardThunk(dashboard)),
+  };
+};
 
 export default connect(mapStateToProps, mapDispatchToProps)(NeoDashboardSidebar);

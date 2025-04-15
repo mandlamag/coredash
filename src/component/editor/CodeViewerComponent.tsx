@@ -40,7 +40,7 @@ export const NoDrawableDataErrorMessage = () => {
         '- a numeric value field was selected, but only zeroes were returned.\n' +
         '- an array field was selected, but no array was returned.\n' +
         '- Your visualization expects nodes/relationships, but none were returned.\n\n' +
-        'View the NeoDash documentation for more information.'
+        'View the documentation for more information.'
       }
     />
   );

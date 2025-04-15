@@ -1,7 +1,6 @@
 {
-  "title": "Bitcoin Transaction Analysis Dashboard",
-  "version": "2.2",
-  "uuid": "default-bitcoin-dashboard",
+  "title": "Bitcoin",
+  "version": "2.0",
   "settings": {
     "pagenumber": 0,
     "editable": true,
@@ -9,9 +8,7 @@
     "parameters": {
       "neodash_address_id": "34JwtEreQ71fhVYvTBcHnPdExnz213SH6Y",
       "neodash_transaction_id": null,
-      "neodash_transaction_hash": "b582262caf518f46fa10ebf7299f91239ca54143b7e449231037b92a83ad269b",
-      "neodash_entity_name": null,
-      "neodash_category_name": null
+      "neodash_transaction_hash": "b582262caf518f46fa10ebf7299f91239ca54143b7e449231037b92a83ad269b"
     },
     "queryTimeLimit": 60
   },
@@ -20,170 +17,221 @@
       "title": "Overall statistics",
       "reports": [
         {
-          "title": "Total Transaction Count",
-          "query": "MATCH (tx:Transaction) RETURN count(tx) as TotalTransactions",
-          "width": 3.5,
-          "height": 1.25,
-          "x": 0,
-          "y": 0,
+          "title": "Total count of transactions",
+          "query": "MATCH (t:Transaction)\nRETURN count(*) AS transactions\n\n\n",
+          "width": "3",
           "type": "value",
-          "selection": {
-            "index": 0,
-            "value": "TotalTransactions"
-          },
-          "settings": {
-            "valueFormat": "0,0",
-            "description": "Total number of Bitcoin transactions in the database"
-          }
+          "height": "1.25",
+          "selection": {},
+          "settings": {},
+          "refreshRate": 300
         },
         {
-          "title": "24h Transaction Volume",
-          "query": "MATCH (tx:Transaction) WHERE tx.timestamp > datetime() - duration('P1D') RETURN sum(tx.value) as Volume",
-          "width": 3.5,
-          "height": 1.25,
-          "x": 6,
-          "y": 0,
+          "title": "Transaction count last 24 hours",
+          "query": "MATCH (t:Transaction)\nWHERE datetime() - duration({hours:24}) <= t.timestamp\nRETURN count(*) AS result\n\n\n",
+          "width": "3",
           "type": "value",
-          "selection": {
-            "index": 0,
-            "value": "Volume"
-          },
-          "settings": {
-            "valueFormat": "0,0.00 BTC",
-            "description": "Total Bitcoin volume in the last 24 hours"
-          }
-        },
-        {
-          "title": "Largest Transactions",
-          "query": "MATCH (tx:Transaction) RETURN tx.hash as TxHash, tx.value as Value, tx.timestamp as Timestamp ORDER BY Value DESC LIMIT 10",
-          "width": 6,
-          "height": 2,
-          "x": 6,
-          "y": 2,
-          "type": "table",
+          "height": "1.25",
           "selection": {},
           "settings": {
-            "columnWidths": [4, 2, 2],
-            "description": "Top 10 largest Bitcoin transactions by value"
-          }
+            "nodePositions": {}
+          },
+          "refreshRate": 300
+        },
+        {
+          "title": "Volume flow in million USD last 24 hours",
+          "query": "MATCH (t:Transaction)\nWHERE datetime() - duration({hours:24}) <= t.timestamp\nRETURN sum(t.flowUSD) / 1000000 AS result\n\n\n\n\n\n",
+          "width": "6",
+          "type": "value",
+          "height": "1.25",
+          "selection": {},
+          "settings": {
+            "nodePositions": {}
+          },
+          "refreshRate": 300
+        },
+        {
+          "title": "Transactions count for the last 24 hours",
+          "query": "MATCH (t:Transaction)\nWHERE datetime() - duration({hours:24}) <= t.timestamp\nWITH t.timestamp.year AS year, t.timestamp.day AS day, t.timestamp.month AS month, t.timestamp.hour AS hour, count(*) AS y\nRETURN datetime({year:year, month:month, day:day, hour:hour}) AS x, y\n\n\n",
+          "width": "6",
+          "type": "line",
+          "height": "3",
+          "selection": {
+            "x": "x",
+            "value": [
+              "y"
+            ]
+          },
+          "settings": {
+            "xAxisTimeFormat": "%Y-%m-%d %H-%M",
+            "xTickTimeValues": "every 4 hours",
+            "marginLeft": 75,
+            "hideSelections": true
+          },
+          "refreshRate": 300
+        },
+        {
+          "title": "Transaction volume flow in million USD for the last 24 hours",
+          "query": "MATCH (t:Transaction)\nWHERE datetime() - duration({hours:24}) <= t.timestamp\nWITH t.timestamp.year AS year, t.timestamp.day AS day, t.timestamp.month AS month, t.timestamp.hour AS hour, sum(t.flowUSD) AS y\nRETURN datetime({year:year, month:month, day:day, hour:hour}) AS x, y / 1000000\n\n\n\n\n\n",
+          "width": "6",
+          "type": "line",
+          "height": "3",
+          "selection": {
+            "x": "x",
+            "value": [
+              "y / 1000000"
+            ]
+          },
+          "settings": {
+            "xAxisTimeFormat": "%Y-%m-%d %H-%M",
+            "xTickTimeValues": "every 4 hours",
+            "marginLeft": 75,
+            "hideSelections": true
+          },
+          "refreshRate": 300
+        },
+        {
+          "title": "Largest transactions by flow within last 24 hours",
+          "query": "MATCH (t:Transaction)\nWHERE datetime() - duration({hours:24}) <= t.timestamp\nRETURN t.hash AS transactionHash, t.flowUSD AS valueInUSD, t.flowBTC AS valueInBTC, t.timestamp AS date\nORDER BY valueInBTC DESC LIMIT 100\n\n",
+          "width": "6",
+          "type": "table",
+          "height": "3",
+          "selection": {},
+          "settings": {
+            "nodePositions": {}
+          },
+          "refreshRate": 300
+        },
+        {
+          "title": "Addresses with the highest incoming flow within last 24 hours",
+          "query": "MATCH (a:Address)\n// incoming flow\nMATCH (a)<-[in:SENT]-(it:Transaction)<-[inback:SENT]-(inbackAddress)\nWHERE datetime() - duration({hours:24}) <= it.timestamp\nWITH a, collect(distinct in) AS incomingTransactions, collect(distinct CASE WHEN inbackAddress = a THEN inback END) AS returnedChange\nWITH a, apoc.coll.sum([t in incomingTransactions | t.valueUSD]) AS incomingTotal, apoc.coll.sum([t in returnedChange | t.valueUSD]) AS returnedTotal\nWITH a, coalesce(incomingTotal,0.0) - coalesce(returnedTotal,0.0) AS incomingFlowUSD\nORDER BY incomingFlowUSD DESC\nLIMIT 100\nRETURN a.id AS address, incomingFlowUSD\n",
+          "width": "6",
+          "type": "table",
+          "height": "3",
+          "selection": {},
+          "settings": {
+            "nodePositions": {}
+          },
+          "refreshRate": 300
         }
-      ],
-      "parameters": {}
+      ]
     },
     {
-      "title": "Address Analysis",
+      "title": "Inspect specific address",
       "reports": [
         {
-          "title": "Address Search",
-          "query": "MATCH (addr:Address {address: $address}) RETURN addr.address as Address, addr.balance as Balance, addr.txCount as TransactionCount",
-          "width": 12,
-          "height": 2,
-          "x": 0,
-          "y": 0,
-          "type": "table",
+          "title": "Select",
+          "query": "MATCH (n:`Address`) \nWHERE toLower(toString(n.`id`)) CONTAINS toLower($input) \nRETURN DISTINCT n.`id` as value LIMIT 5",
+          "width": "4",
+          "type": "select",
+          "height": "1.25",
           "selection": {},
           "settings": {
-            "description": "Search for a specific Bitcoin address"
-          },
-          "parameters": {
-            "address": {
-              "type": "text",
-              "value": ""
-            }
+            "type": "Node Property",
+            "entityType": "Address",
+            "propertyType": "id",
+            "parameterName": "neodash_address_id"
           }
         },
         {
-          "title": "Address Transactions",
-          "query": "MATCH (addr:Address {address: $address})-[r:PARTICIPATES_IN]->(tx:Transaction) RETURN tx.hash as TxHash, tx.value as Value, tx.timestamp as Timestamp, r.type as Type ORDER BY Timestamp DESC LIMIT 20",
-          "width": 6,
-          "height": 6,
-          "x": 0,
-          "y": 2,
-          "type": "table",
+          "title": "Total outgoing volume in USD",
+          "query": "MATCH (a:Address)\nWHERE a.id = $neodash_address_id\n// outgoing flow\nOPTIONAL MATCH (a)-[out:SENT]->(ot:Transaction)-[outback:SENT]->(outbackAddress)\nWITH a, collect(distinct out) AS outgoingTransactions, collect(distinct CASE WHEN outbackAddress = a THEN outback END) AS returnedChange\nWITH a, apoc.coll.sum([t in outgoingTransactions | t.valueUSD]) AS outgoingTotal, apoc.coll.sum([t in returnedChange | t.valueUSD]) AS returnedTotal\nWITH a, coalesce(outgoingTotal,0.0) - coalesce(returnedTotal,0.0) AS outgoingFlowUSD\nRETURN outgoingFlowUSD",
+          "width": "4",
+          "type": "value",
+          "height": "1.25",
           "selection": {},
           "settings": {
-            "description": "Recent transactions for the specified address"
+            "nodePositions": {}
           },
-          "parameters": {
-            "address": {
-              "type": "text",
-              "value": ""
-            }
+          "refreshRate": 60
+        },
+        {
+          "title": "Total incoming volume in USD",
+          "query": "MATCH (a:Address)\nWHERE a.id = $neodash_address_id\n// outgoing flow\nOPTIONAL MATCH (a)<-[in:SENT]-(it:Transaction)<-[inback:SENT]-(inbackAddress)\nWITH a, collect(distinct in) AS outgoingTransactions, collect(distinct CASE WHEN inbackAddress = a THEN inback END) AS returnedChange\nWITH a, apoc.coll.sum([t in outgoingTransactions | t.valueUSD]) AS incomingTotal, apoc.coll.sum([t in returnedChange | t.valueUSD]) AS returnedTotal\nWITH a, coalesce(incomingTotal,0.0) - coalesce(returnedTotal,0.0) AS incomingFlowUSD\nRETURN incomingFlowUSD",
+          "width": "4",
+          "type": "value",
+          "height": "1.25",
+          "selection": {},
+          "settings": {
+            "nodePositions": {}
+          },
+          "refreshRate": 60
+        },
+        {
+          "title": "Largest outgoing transactions",
+          "query": "MATCH (a:Address)-[r:SENT]->(t:Transaction)\nWHERE a.id = $neodash_address_id\nRETURN t.hash AS transactionHash, r.valueUSD AS outgoingUSD,r.valueBTC AS outgoingBTC, t.timestamp AS date\nORDER BY outgoingUSD DESC\nLIMIT 100\n\n\n",
+          "width": "6",
+          "type": "table",
+          "height": "3",
+          "selection": {},
+          "settings": {
+            "nodePositions": {}
           }
         },
         {
-          "title": "Address Network",
-          "query": "MATCH path = (addr:Address {address: $address})-[:PARTICIPATES_IN*1..2]-(related) RETURN path",
-          "width": 6,
-          "height": 6,
-          "x": 6,
-          "y": 2,
+          "title": "Largest incoming transactions",
+          "query": "MATCH (a:Address)<-[r:SENT]-(t:Transaction)\nWHERE a.id = $neodash_address_id\nRETURN t.hash AS transactionHash, r.valueUSD AS incomingUSD,r.valueBTC AS incomingBTC, t.timestamp AS date\nORDER BY incomingUSD DESC\nLIMIT 100\n\n\n\n\n",
+          "width": "6",
+          "type": "table",
+          "height": "3",
+          "selection": {},
+          "settings": {
+            "nodePositions": {}
+          }
+        }
+      ]
+    },
+    {
+      "title": "Visualize specific transaction",
+      "reports": [
+        {
+          "title": "",
+          "query": "MATCH (n:`Transaction`) \nWHERE toLower(toString(n.`hash`)) CONTAINS toLower($input) \nRETURN DISTINCT n.`hash` as value LIMIT 5",
+          "width": "4",
+          "type": "select",
+          "height": "1.25",
+          "selection": {},
+          "settings": {
+            "type": "Node Property",
+            "entityType": "Transaction",
+            "propertyType": "hash",
+            "parameterName": "neodash_transaction_hash"
+          }
+        },
+        {
+          "title": "Graph visualization",
+          "query": "MATCH (t:Transaction)\nWHERE t.hash = $neodash_transaction_hash\nMATCH p=(t)-[:SENT]-()\nRETURN p\n\n\n",
+          "width": "12",
           "type": "graph",
-          "selection": {},
+          "height": "6",
+          "selection": {
+            "Transaction": "(label)",
+            "Address": "id"
+          },
           "settings": {
             "nodePositions": {},
-            "description": "Network graph showing transactions and related addresses"
-          },
-          "parameters": {
-            "address": {
-              "type": "text",
-              "value": ""
-            }
-          }
-        }
-      ],
-      "parameters": {}
-    },
-    {
-      "title": "Sanctioned Addresses",
-      "reports": [
-        {
-          "title": "Sanctioned Addresses by Category",
-          "query": "MATCH (addr:Address) WHERE addr.sanctioned = true RETURN addr.category as Category, count(addr) as AddressCount ORDER BY AddressCount DESC",
-          "width": 6,
-          "height": 4,
-          "x": 0,
-          "y": 0,
-          "type": "pie",
-          "selection": {
-            "index": "Category",
-            "value": "AddressCount"
-          },
-          "settings": {
-            "showLegend": true,
-            "description": "Distribution of sanctioned addresses by category"
+            "hideSelections": true
           }
         },
         {
-          "title": "Recently Active Sanctioned Addresses",
-          "query": "MATCH (addr:Address)-[:PARTICIPATES_IN]->(tx:Transaction) WHERE addr.sanctioned = true AND tx.timestamp > datetime() - duration('P7D') RETURN addr.address as Address, addr.entity as Entity, addr.category as Category, max(tx.timestamp) as LastActivity ORDER BY LastActivity DESC LIMIT 10",
-          "width": 6,
-          "height": 4,
-          "x": 6,
-          "y": 0,
+          "title": "Inputs of the transaction",
+          "query": "MATCH (t:Transaction)<-[r:SENT]-(a)\nWHERE t.hash = $neodash_transaction_hash\nRETURN a.id AS address, r.valueUSD AS valueUSD, r.valueBTC AS valueBTC\nORDER BY valueUSD DESC\n\n\n\n\n",
+          "width": "6",
           "type": "table",
+          "height": "6",
           "selection": {},
-          "settings": {
-            "description": "Sanctioned addresses with activity in the last 7 days"
-          }
+          "settings": {}
         },
         {
-          "title": "High-Value Transactions to Sanctioned Addresses",
-          "query": "MATCH (addr:Address)-[r:PARTICIPATES_IN]->(tx:Transaction) WHERE addr.sanctioned = true AND r.type = 'INPUT' AND tx.timestamp > datetime() - duration('P30D') RETURN tx.hash as TxHash, tx.value as Value, addr.address as SanctionedAddress, addr.entity as Entity, tx.timestamp as Timestamp ORDER BY Value DESC LIMIT 15",
-          "width": 12,
-          "height": 4,
-          "x": 0,
-          "y": 4,
+          "title": "Outputs of the transaction",
+          "query": "MATCH (t:Transaction)-[r:SENT]->(a)\nWHERE t.hash = $neodash_transaction_hash\nRETURN a.id AS address, r.valueUSD AS valueUSD, r.valueBTC AS valueBTC\nORDER BY valueUSD DESC\n\n\n\n\n\n\n\n",
+          "width": "6",
           "type": "table",
+          "height": "6",
           "selection": {},
-          "settings": {
-            "description": "Largest transactions to sanctioned addresses in the last 30 days"
-          }
+          "settings": {}
         }
-      ],
-      "parameters": {}
+      ]
     }
-  ],
-  "parameters": {},
-  "extensions": {}
+  ]
 }

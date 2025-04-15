@@ -99,6 +99,13 @@ export async function runCypherQuery(
     // Transform parameters for GraphQL API
     const transformedParams = transformNeo4jParamsToGraphQLParams(parameters);
 
+    // Check for required parameters in the query that might be missing in the parameters
+    // This specifically handles the $input parameter issue
+    if (query.includes('$input') && (!transformedParams.input || transformedParams.input === undefined)) {
+      // Provide a default empty string for the input parameter if it's missing
+      transformedParams.input = '';
+    }
+
     // Execute the query using the GraphQL API service
     const result = await graphQLApiService.executeQuery(query, transformedParams);
 

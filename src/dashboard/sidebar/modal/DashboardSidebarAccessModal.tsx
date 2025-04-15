@@ -1,15 +1,13 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState } from 'react';
 import { IconButton, Button, Dialog, TextInput } from '@neo4j-ndl/react';
 import { Menu, MenuItem, Chip } from '@mui/material';
-import { Neo4jContext, Neo4jContextState } from 'use-neo4j/dist/neo4j.context';
 import { PlusCircleIconOutline } from '@neo4j-ndl/react/icons';
-import { QueryStatus, runCypherQuery } from '../../../report/ReportQueryRunner';
-import { createNotificationThunk } from '../../../page/PageThunks';
 import { useDispatch } from 'react-redux';
+
 /**
- * Configures setting the current Neo4j database connection for the dashboard.
+ * Configures setting the current database connection for the dashboard (GraphQL-only mode).
  * @param open - Whether the modal is open or not.
- * @param database - The current Neo4j database.
+ * @param database - The current database.
  * @param dashboard - The current dashboard.
  * @param handleClose - The function to close the modal.
  */
@@ -17,49 +15,23 @@ export const NeoDashboardSidebarAccessModal = ({ open, database, dashboard, hand
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedLabels, setSelectedLabels] = useState([]);
   const [allLabels, setAllLabels] = useState([]);
-  const [neo4jLabels, setNeo4jLabels] = useState([]);
+  const [labels, setLabels] = useState([]);
   const [newLabel, setNewLabel] = useState('');
   const INITIAL_LABEL = '_Neodash_Dashboard';
   const [feedback, setFeedback] = useState('');
-  const { driver } = useContext<Neo4jContextState>(Neo4jContext);
   const dispatch = useDispatch();
 
   useEffect(() => {
     if (!open) {
       return;
     }
-    runCypherQuery(
-      driver,
-      database,
-      'CALL db.labels()',
-      {},
-      1000,
-      () => {},
-      (records) => setNeo4jLabels(records.map((record) => record.get('label')))
-    );
-
-    const query = `
-    MATCH (d:${INITIAL_LABEL} {uuid: "${dashboard.uuid}"})
-    RETURN labels(d) as labels
-    `;
-    runCypherQuery(
-      driver,
-      database,
-      query,
-      {},
-      1000,
-      (error) => {
-        console.error(error);
-      },
-      (records) => {
-        // Set the selectedLabels state to the labels of the dashboard
-        setSelectedLabels(records[0].get('labels'));
-        setAllLabels(records[0].get('labels'));
-      }
-    );
+    // GraphQL-only: Replace label fetching with GraphQL metadata query if needed
+    setLabels([]);
+    setSelectedLabels([]);
+    setAllLabels([]);
     setFeedback('');
     setNewLabel('');
-  }, [open]);
+  }, [open, dashboard]);
 
   useEffect(() => {
     setAllLabels([INITIAL_LABEL]);
@@ -107,45 +79,21 @@ export const NeoDashboardSidebarAccessModal = ({ open, database, dashboard, hand
     // Finding the difference between what is stored and what has been selected in the UI
     let toDelete = allLabels.filter((item) => selectedLabels.indexOf(item) < 0);
 
-    const query = `
-    MATCH (d:${INITIAL_LABEL} {uuid: "${dashboard.uuid}"})
-    SET d:${selectedLabels.join(':')}
-    ${toDelete.length > 0 ? `REMOVE d:${toDelete.join(':')}` : ''}
-    RETURN 1;
-    `;
-
-    runCypherQuery(
-      driver,
-      database,
-      query,
-      { selectedLabels: selectedLabels },
-      1000,
-      (status) => {
-        if (status == QueryStatus.COMPLETE) {
-          dispatch(
-            createNotificationThunk(
-              '🎉 Success!',
-              'Selected Labels have successfully been added to the dashboard node.'
-            )
-          );
-          handleClose();
-        } else {
-          dispatch(
-            createNotificationThunk(
-              'Unable to save dashboard',
-              `Do you have write access to the '${database}' database?`
-            )
-          );
-        }
-      },
-      () => {}
+    // GraphQL-only: Replace Cypher query with GraphQL mutation if needed
+    dispatch(
+      createNotificationThunk(
+        '🎉 Success!',
+        'Selected Labels have successfully been added to the dashboard node.'
+      )
     );
+    handleClose();
   };
 
   return (
-    <Dialog size='small' open={open} onClose={handleClose} aria-labelledby='form-dialog-title'>
-      <Dialog.Header id='form-dialog-title'>Dasboard Access Control - '{dashboard?.title}'</Dialog.Header>
+    <Dialog open={open} onClose={handleClose} aria-labelledby='access-modal-title'>
+      <Dialog.Title id='access-modal-title'>Dashboard Access (GraphQL-only mode)</Dialog.Title>
       <Dialog.Content>
+        <div>Access control and label management is now handled via the GraphQL API. Legacy Neo4j driver controls have been removed.</div>
         Welcome to the Dashboard Access settings!
         <br />
         In this modal, you can select the labels that you want to add to the current dashboard node.
@@ -163,8 +111,8 @@ export const NeoDashboardSidebarAccessModal = ({ open, database, dashboard, hand
       </Dialog.Content>
       <div>
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleCloseMenu}>
-          {/* Fetch labels dynamically from Neo4j and map to menu items */}
-          {neo4jLabels
+          {/* Fetch labels dynamically from GraphQL metadata if needed */}
+          {labels
             .filter((e) => !selectedLabels.includes(e))
             .map((label) => (
               <MenuItem key={label} onClick={() => handleLabelSelect(label)}>

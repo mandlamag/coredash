@@ -1,8 +1,7 @@
-import React, { useContext } from 'react';
+import React from 'react';
 
 import { connect } from 'react-redux';
 import { DataGrid } from '@mui/x-data-grid';
-import { Neo4jContext, Neo4jContextState } from 'use-neo4j/dist/neo4j.context';
 import NeoSetting from '../../../../component/field/Setting';
 import { applicationGetConnection } from '../../../../application/ApplicationSelectors';
 import { SELECTION_TYPES } from '../../../../config/CardConfig';
@@ -21,7 +20,7 @@ export const NeoShareModal = ({ open, handleClose, connection }) => {
   const [loadFromNeo4jModalOpen, setLoadFromNeo4jModalOpen] = React.useState(false);
   const [loadFromFileModalOpen, setLoadFromFileModalOpen] = React.useState(false);
   const [rows, setRows] = React.useState([]);
-  const { driver } = useContext<Neo4jContextState>(Neo4jContext);
+  // Removed Neo4j driver context usage for GraphQL-only mode
 
   // One of [null, database, file]
   const shareType = 'url';
@@ -48,7 +47,7 @@ export const NeoShareModal = ({ open, handleClose, connection }) => {
             onClick={() => {
               setShareID(c.uuid);
               setShareName(c.row.title);
-              setShareType('database');
+              // Removed database loading logic for GraphQL-only mode
               setLoadFromNeo4jModalOpen(false);
             }}
             style={{ float: 'right' }}
@@ -61,144 +60,22 @@ export const NeoShareModal = ({ open, handleClose, connection }) => {
           </Button>
         );
       },
-      width: 130,
+      width: 100,
     },
   ];
 
   return (
-    <Dialog key={1} size='large' open={open} onClose={handleClose} aria-labelledby='form-dialog-title'>
-      <Dialog.Header id='form-dialog-title'>
+    <Dialog open={open} onClose={handleClose} aria-labelledby='share-modal-title'>
+      <Dialog.Header id='share-modal-title'>
         <ShareIconOutline className='icon-base icon-inline text-r' />
-        Share Dashboard File
+        Share Dashboard (GraphQL-only mode)
       </Dialog.Header>
       <Dialog.Content>
-        This window lets you create a temporary share link for your dashboard. Keep in mind that share links are not
-        intended as a way to publish your dashboard for users, see the&nbsp;
-        <TextLink externalLink href='https://neo4j.com/labs/neodash/2.4/user-guide/publishing/'>
-          documentation
-        </TextLink>{' '}
-        for more on publishing.
-        <br />
-        <hr />
-        <br />
-        To share a dashboard file directly, make it accessible{' '}
-        <TextLink externalLink target='_blank' href='https://gist.github.com/'>
-          online
-        </TextLink>
-        .<br /> Then, paste the direct link here:
-        <NeoSetting
-          key={'url'}
-          name={'url'}
-          value={shareID}
-          style={{ marginLeft: '0px', width: '100%', marginBottom: '10px' }}
-          type={SELECTION_TYPES.TEXT}
-          helperText={'Make sure the URL starts with http:// or https://.'}
-          label={''}
-          defaultValue='https://gist.githubusercontent.com/username/0a78d80567f23072f06e03005cf53bce/raw/f97cc...'
-          onChange={(e) => {
-            setShareLink(null);
-            setShareID(e);
-          }}
-        />
-        {shareID ? (
-          <>
-            <br />
-            <NeoSetting
-              key={'credentials'}
-              name={'credentials'}
-              value={shareConnectionDetails}
-              type={SELECTION_TYPES.LIST}
-              style={{ marginLeft: '0px', width: '100%', marginBottom: '10px' }}
-              helperText={'Share the dashboard including your Neo4j credentials.'}
-              label={'Include Connection Details'}
-              defaultValue={'No'}
-              choices={['Yes', 'No']}
-              onChange={(e) => {
-                if (e == 'No' && shareStandalone == 'Yes') {
-                  return;
-                }
-                setShareLink(null);
-                setShareConnectionDetails(e);
-              }}
-            />
-            {shareLocalURL != shareBaseURL ? (
-              <NeoSetting
-                key={'standalone'}
-                name={'standalone'}
-                value={shareStandalone}
-                style={{ marginLeft: '0px', width: '100%', marginBottom: '10px' }}
-                type={SELECTION_TYPES.LIST}
-                helperText={'Share the dashboard as a standalone webpage, without the NeoDash editor.'}
-                label={'Standalone Dashboard'}
-                defaultValue={'No'}
-                choices={['Yes', 'No']}
-                onChange={(e) => {
-                  setShareLink(null);
-                  setShareStandalone(e);
-                  if (e == 'Yes') {
-                    setShareConnectionDetails('Yes');
-                  }
-                }}
-              />
-            ) : (
-              <></>
-            )}
-            <NeoSetting
-              key={'selfHosted'}
-              name={'selfHosted'}
-              value={selfHosted}
-              style={{ marginLeft: '0px', width: '100%', marginBottom: '10px' }}
-              type={SELECTION_TYPES.LIST}
-              helperText={'Share the dashboard using self Hosted Neodash, otherwise neodash.graphapp.io will be used'}
-              label={'Self Hosted Dashboard'}
-              defaultValue={'No'}
-              choices={['Yes', 'No']}
-              onChange={(e) => {
-                setShareLink(null);
-                setSelfHosted(e);
-              }}
-            />
-            <Button
-              onClick={() => {
-                setShareLink(
-                  `${
-                    selfHosted == 'Yes' ? shareLocalURL : shareBaseURL
-                  }/?share&type=${shareType}&id=${encodeURIComponent(shareID)}&dashboardDatabase=${encodeURIComponent(
-                    dashboardDatabase
-                  )}${
-                    shareConnectionDetails == 'Yes'
-                      ? `&credentials=${encodeURIComponent(
-                          `${connection.protocol}://${connection.username}:${connection.password}@${connection.database}:${connection.url}:${connection.port}`
-                        )}`
-                      : ''
-                  }${shareStandalone == 'Yes' ? `&standalone=${shareStandalone}` : ''}`
-                );
-              }}
-              fill='outlined'
-              color='neutral'
-              floating
-            >
-              Generate Link
-              <ShareIconOutline className='btn-icon-base-r' />
-            </Button>
-          </>
-        ) : (
-          <></>
-        )}
-        {shareLink ? (
-          <>
-            <br />
-            Use the generated link to view the dashboard:
-            <br />
-            <TextLink externalLink href={shareLink} target='_blank'>
-              {shareLink}
-            </TextLink>
-            <br />
-          </>
-        ) : (
-          <></>
-        )}
+        <div>Legacy Neo4j driver-based sharing is disabled. Please use the new GraphQL API sharing features.</div>
       </Dialog.Content>
+      <Dialog.Actions>
+        <Button onClick={handleClose} color='primary'>Close</Button>
+      </Dialog.Actions>
     </Dialog>
   );
 };

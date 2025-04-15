@@ -77,7 +77,7 @@ const NeoCard = ({
       });
       setDatabaseListLoaded(true);
     }
-  }, [report.query]);
+  }, [databaseListLoaded, loadDatabaseListFromNeo4j, apiService]);
 
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const debouncedOnToggleCardSettings = useCallback(debounce(onToggleCardSettings, 500), []);

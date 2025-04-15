@@ -132,17 +132,50 @@ export class GraphQLApiService {
    * @param parameters - The query parameters.
    * @returns A promise that resolves to the query results.
    */
-  private async handleSpecialQuery(query: string, parameters: Record<string, any> = {}): Promise<any> {
+  async handleSpecialQuery(query: string, parameters: Record<string, any> = {}): Promise<any> {
     const normalizedQuery = query.trim().toUpperCase();
-    console.log(`GraphQL API special query handling: ${query.substring(0, 100)}...`);
     
     try {
-      // For all queries, attempt to execute them directly through the API
-      console.log('Attempting to execute special query directly through the API');
+      // For SHOW DATABASES, provide a more comprehensive response with available databases
+      // This is critical for database selection in the UI
+      if (normalizedQuery.startsWith('SHOW DATABASES')) {
+        console.log('Handling SHOW DATABASES query with enhanced response');
+        
+        // In GraphQL-only mode, we'll provide a fixed list of databases
+        // This can be customized based on your environment or configuration
+        const availableDatabases = [this.database];
+        
+        // If we have a specific database configured in headers, add it to the list
+        if (this.headers['x-database'] && !availableDatabases.includes(this.headers['x-database'])) {
+          availableDatabases.push(this.headers['x-database']);
+        }
+        
+        // Add standard Neo4j databases if they're not already in the list
+        ['neo4j', 'system'].forEach(db => {
+          if (!availableDatabases.includes(db)) {
+            availableDatabases.push(db);
+          }
+        });
+        
+        // Create a Neo4j-like response with the available databases
+        return {
+          records: availableDatabases.map(db => ({
+            keys: ['name'],
+            _fields: [db],
+            get: (key: string) => key === 'name' ? db : null,
+            toObject: () => ({ name: db })
+          })),
+          summary: {
+            resultAvailableAfter: 0,
+            resultConsumedAfter: 0
+          }
+        };
+      }
       
+      // For other special queries, attempt to execute them using the standard executeQuery method
+      // We can't call executeQuery directly as it would create an infinite loop
+      // So we'll use a simplified direct GraphQL call instead
       const formattedQuery = JSON.stringify(query);
-      console.log(`Formatted query: ${formattedQuery}`);
-      
       const graphqlQuery = gql`
         query {
           executeCypherQuery(query: ${formattedQuery}) {
@@ -151,69 +184,32 @@ export class GraphQLApiService {
               resultAvailableAfter
               resultConsumedAfter
               counters
-              notifications
-              plan
-              profile
-              queryType
             }
           }
         }
       `;
       
-      console.log(`Full GraphQL query: ${graphqlQuery}`);
-      console.time('Special Query Execution Duration');
-      
       const response = await this.client.request(graphqlQuery) as { executeCypherQuery: any };
-      console.timeEnd('Special Query Execution Duration');
-      
-      console.log('Special query executed successfully');
-      console.log(`Response structure: ${Object.keys(response).join(', ')}`);
-      
       if (response && response.executeCypherQuery) {
-        // Add default summary values if they don't exist
-        if (response.executeCypherQuery.summary && !response.executeCypherQuery.summary.resultAvailableAfter) {
-          response.executeCypherQuery.summary = {
-            ...response.executeCypherQuery.summary,
-            resultAvailableAfter: 0,
-            resultConsumedAfter: 0
-          };
-        }
-        
         return response.executeCypherQuery;
       }
       
-      // If we get here, something went wrong but didn't throw an error
-      console.error('Special query returned empty or invalid response');
       throw new Error('Invalid response from GraphQL API');
-    } catch (error: unknown) {
-      console.error('Error executing special query:');
-      
-      if (error instanceof Error) {
-        console.error(`Error type: ${error.constructor.name}`);
-        console.error(`Error message: ${error.message}`);
-        console.error(`Stack trace: ${error.stack}`);
-      } else {
-        console.error(`Unknown error type: ${typeof error}`);
-        console.error(`Error value: ${String(error)}`);
-      }
-      
-      // Check if error has response property (GraphQL client error)
-      if (error && typeof error === 'object' && 'response' in error) {
-        const graphqlError = error as { response: { data?: any, status?: number, headers?: any } };
-        if (graphqlError.response) {
-          console.error('Response data:', JSON.stringify(graphqlError.response.data, null, 2));
-          console.error('Response status:', graphqlError.response.status);
-          console.error('Response headers:', JSON.stringify(graphqlError.response.headers, null, 2));
-        }
-      }
+    } catch (error) {
+      console.error('Error handling special query:', error);
       
       // For SHOW DATABASES, provide a minimal response with the current database
-      // This is the only special case we'll handle as it's critical for database selection
+      // This is a fallback if the enhanced handling fails
       if (normalizedQuery.startsWith('SHOW DATABASES')) {
         console.log('Providing minimal response for SHOW DATABASES');
         return {
           records: [
-            { _fields: [this.database] }
+            { 
+              keys: ['name'],
+              _fields: [this.database],
+              get: (key: string) => key === 'name' ? this.database : null,
+              toObject: () => ({ name: this.database })
+            }
           ],
           summary: {
             resultAvailableAfter: 0,
@@ -260,25 +256,51 @@ export class GraphQLApiService {
     }
     
     try {
-      // Format the query for the GraphQL API
-      const formattedQuery = JSON.stringify(cypherQuery);
-      console.log(`Formatted query: ${formattedQuery}`);
+      // Check if the query is complex (multi-line or contains special characters)
+      const isComplexQuery = cypherQuery.includes('\n') || 
+                            cypherQuery.includes('datetime') || 
+                            cypherQuery.includes('duration') ||
+                            cypherQuery.includes('{') ||
+                            cypherQuery.includes('}');
       
-      // Construct the GraphQL query
-      const query = gql`
-        query {
-          executeCypherQuery(query: ${formattedQuery}) {
-            records
-            summary {
-              resultAvailableAfter
-              resultConsumedAfter
-              counters
+      // Use triple quotes for complex queries to preserve formatting and special characters
+      let graphqlQuery;
+      if (isComplexQuery) {
+        console.log('Using triple quotes for complex query');
+        graphqlQuery = gql`
+          query {
+            executeCypherQuery(query: """
+              ${cypherQuery}
+            """) {
+              records
+              summary {
+                resultAvailableAfter
+                resultConsumedAfter
+                counters
+              }
             }
           }
-        }
-      `;
+        `;
+      } else {
+        // For simple queries, use the standard JSON.stringify approach
+        const formattedQuery = JSON.stringify(cypherQuery);
+        console.log(`Formatted query: ${formattedQuery}`);
+        
+        graphqlQuery = gql`
+          query {
+            executeCypherQuery(query: ${formattedQuery}) {
+              records
+              summary {
+                resultAvailableAfter
+                resultConsumedAfter
+                counters
+              }
+            }
+          }
+        `;
+      }
       
-      console.log(`Full GraphQL query: ${query}`);
+      console.log(`Full GraphQL query: ${graphqlQuery}`);
 
       // Set the database header if needed
       if (this.database) {
@@ -290,7 +312,7 @@ export class GraphQLApiService {
       console.time('GraphQL API Request Duration');
       
       // Execute the query against the GraphQL API
-      const response = await this.client.request(query) as { executeCypherQuery: any };
+      const response = await this.client.request(graphqlQuery) as { executeCypherQuery: any };
       
       console.timeEnd('GraphQL API Request Duration');
       console.log('GraphQL API Response received');
@@ -373,8 +395,6 @@ export class GraphQLApiService {
       throw graphqlError;
     }
   }
-  
-
 
   /**
    * Get metadata about the database from the GraphQL API.

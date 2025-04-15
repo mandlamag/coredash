@@ -514,23 +514,12 @@ export const loadDashboardListFromNeo4jThunk = (driver, database, callback) => (
 
 export const loadDatabaseListFromNeo4jThunk = (apiService, callback) => (dispatch: any) => {
   try {
-    // Use the GraphQLApiService to get the list of databases
-    runCypherQuery(
-      apiService, // Pass the apiService instead of driver
-      'system',
-      'SHOW DATABASES yield name, currentStatus WHERE currentStatus = "online" RETURN DISTINCT name',
-      {},
-      1000,
-      () => {},
-      (records) => {
-        const result = records.map((r) => {
-          return r._fields && r._fields[0];
-        });
-        callback(result);
-      }
-    );
+    // In GraphQL-only mode, we don't allow users to list databases
+    // Just return a fixed list with the current database only
+    const currentDatabase = apiService.getDatabase ? apiService.getDatabase() : 'neo4j';
+    callback([currentDatabase]);
   } catch (e) {
-    dispatch(createNotificationThunk('Unable to list databases from GraphQL API', e));
+    dispatch(createNotificationThunk('Database listing is disabled in GraphQL-only mode', ''));
   }
 };
 

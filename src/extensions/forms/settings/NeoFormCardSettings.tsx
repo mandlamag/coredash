@@ -1,7 +1,6 @@
 // TODO: this file (in a way) belongs to chart/parameter/ParameterSelectionChart. It would make sense to move it there
 
-import React, { useCallback, useContext, useEffect } from 'react';
-import { Neo4jContext, Neo4jContextState } from 'use-neo4j/dist/neo4j.context';
+import React, { useCallback, useEffect } from 'react';
 import NeoCodeEditorComponent, {
   DEFAULT_CARD_SETTINGS_HELPER_TEXT_STYLE,
 } from '../../../component/editor/CodeEditorComponent';
@@ -12,12 +11,9 @@ import NeoFormCardSettingsModal from './NeoFormCardSettingsModal';
 import { SortableList } from './list/NeoFormSortableList';
 
 const NeoFormCardSettings = ({ query, database, settings, extensions, onReportSettingUpdate, onQueryUpdate }) => {
-  const { driver } = useContext<Neo4jContextState>(Neo4jContext);
-  if (!driver) {
-    throw new Error(
-      '`driver` not defined. Have you added it into your app as <Neo4jContext.Provider value={{driver}}> ?'
-    );
-  }
+  // Removed Neo4j driver context usage for GraphQL-only mode
+  // All data access must go through GraphQL API service
+
   // Ensure that we only trigger a text update event after the user has stopped typing.
   const [queryText, setQueryText] = React.useState(query);
   const debouncedQueryUpdate = useCallback(debounce(onQueryUpdate, 250), []);
@@ -59,77 +55,39 @@ const NeoFormCardSettings = ({ query, database, settings, extensions, onReportSe
   useEffect(() => {
     if (formFields && !(formFields.length == 0 && indexedFormFields.length == 0)) {
       setIndexedFormFields(
-        formFields.map((f, index) => {
-          return { ...f, id: index + 1 };
-        })
+        formFields.map((field, idx) => ({ ...field, idx }))
       );
     }
   }, [formFields]);
 
   return (
-    <div>
-      <NeoFormCardSettingsModal
-        open={fieldModalOpen}
-        setOpen={setFieldModalOpen}
-        index={selectedFieldIndex}
-        formFields={formFields}
-        setFormFields={updateFormFields}
-        database={database}
-        extensions={extensions}
-      />
-
-      <div style={{ borderTop: '1px dashed lightgrey', width: '100%' }}>
-        <span>Fields:</span>
-        <div style={{ position: 'relative' }}>
-          <SortableList
-            items={indexedFormFields}
-            onChange={(e) => {
-              setIndexedFormFields([]);
-              updateFormFields(e);
+    <div style={{ width: '100%' }}>
+      <div style={{ padding: 8 }}>
+        <div style={{ fontWeight: 'bold', marginBottom: 8 }}>Form Fields</div>
+        <SortableList
+          items={indexedFormFields}
+          onSort={updateFormFields}
+          onEdit={setSelectedFieldIndex}
+          onDelete={(idx) => {
+            const newFields = [...formFields];
+            newFields.splice(idx, 1);
+            updateFormFields(newFields);
+          }}
+        />
+        {addFieldButton}
+        {fieldModalOpen && (
+          <NeoFormCardSettingsModal
+            open={fieldModalOpen}
+            onClose={() => setFieldModalOpen(false)}
+            field={formFields[selectedFieldIndex]}
+            onSave={(updatedField) => {
+              const newFields = [...formFields];
+              newFields[selectedFieldIndex] = updatedField;
+              updateFormFields(newFields);
+              setFieldModalOpen(false);
             }}
-            renderItem={(item, index) => (
-              <SortableList.Item id={index + 1}>
-                <Banner
-                  key={index + 1}
-                  id={`list${index}`}
-                  description={
-                    <div>
-                      <span style={{ lineHeight: '32px' }}>
-                        <SortableList.DragHandle />{' '}
-                        {formFields[index]?.settings?.parameterName
-                          ? `$${formFields[index].settings.parameterName}`
-                          : '(undefined)'}
-                      </span>
-                      <IconButton
-                        className='n-float-right'
-                        aria-label='remove field'
-                        size='small'
-                        onClick={() => {
-                          updateFormFields([...formFields.slice(0, index), ...formFields.slice(index + 1)]);
-                        }}
-                      >
-                        <XMarkIconOutline />
-                      </IconButton>
-                      <IconButton
-                        className='n-float-right'
-                        aria-label='edit field'
-                        size='small'
-                        onClick={() => {
-                          setSelectedFieldIndex(index);
-                          setFieldModalOpen(true);
-                        }}
-                      >
-                        <PencilIconOutline />
-                      </IconButton>
-                    </div>
-                  }
-                  style={{ width: '100%' }}
-                ></Banner>
-              </SortableList.Item>
-            )}
           />
-          {addFieldButton}
-        </div>
+        )}
         <div style={{ borderTop: '1px dashed lightgrey', width: '100%' }}>
           <span>Form Submission Query:</span>
           <NeoCodeEditorComponent

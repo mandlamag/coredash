@@ -36,7 +36,18 @@ const NodePropertyParameterSelectComponent = (props: ParameterSelectProps) => {
   const [paramValueLocal, setParamValueLocal] = React.useState(props.parameterValue);
   const [paramValueDisplayLocal, setParamValueDisplayLocal] = React.useState(props.parameterDisplayValue);
 
-  const debouncedQueryCallback = useCallback(debounce(props.queryCallback, suggestionsUpdateTimeout), []);
+  // Ensure we always have an input parameter by wrapping the queryCallback
+  const safeQueryCallback = useCallback((query, parameters, setRecords) => {
+    // Always ensure input parameter exists, even if empty
+    const safeParameters = { ...parameters };
+    if (!safeParameters.hasOwnProperty('input') || safeParameters.input === undefined) {
+      safeParameters.input = '';
+    }
+    return props.queryCallback(query, safeParameters, setRecords);
+  }, [props.queryCallback]);
+
+  const debouncedQueryCallback = useCallback(debounce(safeQueryCallback, suggestionsUpdateTimeout), [safeQueryCallback]);
+  
   const label = props.settings && props.settings.entityType ? props.settings.entityType : '';
   const multiSelectLimit = props.settings && props.settings.multiSelectLimit ? props.settings.multiSelectLimit : 5;
   const propertyType = props.settings && props.settings.propertyType ? props.settings.propertyType : '';
@@ -159,6 +170,12 @@ const NodePropertyParameterSelectComponent = (props: ParameterSelectProps) => {
     }
   }, [props.parameterDisplayValue]);
 
+  // Initial load of suggestions when component mounts
+  useEffect(() => {
+    // Load initial suggestions with empty input
+    debouncedQueryCallback(props.query, { input: '', ...allParameters }, setExtraRecords);
+  }, [props.query]);
+
   // The query used to populate the selector is invalid.
   if (extraRecords && extraRecords[0] && extraRecords[0].error) {
     return (
@@ -191,44 +208,43 @@ const NodePropertyParameterSelectComponent = (props: ParameterSelectProps) => {
         inputValue={inputDisplayText.toString() || ''}
         onInputChange={(event, value) => {
           setInputDisplayText(value);
-          debouncedQueryCallback(props.query, { input: `${value}`, ...allParameters }, setExtraRecords);
+          // Always ensure input parameter is provided, even if empty
+          debouncedQueryCallback(props.query, { input: value || '', ...allParameters }, setExtraRecords);
         }}
         isOptionEqualToValue={(option, value) => {
           return (option && option.toString()) === (value && value.toString());
         }}
         onOpen={() => {
           if (extraRecords && extraRecords.length == 0) {
-            debouncedQueryCallback(props.query, { input: `${inputDisplayText}`, ...allParameters }, setExtraRecords);
+            // Always ensure input parameter is provided, even if empty
+            debouncedQueryCallback(props.query, { input: inputDisplayText || '', ...allParameters }, setExtraRecords);
           }
         }}
-        onBlur={() => {
-          // If the user loses focus of the selector, and nothing is selected
-          // We may want to auto-select the first value produced by the selector query (`autoSelectFirstValue == true`)
-          if (autoSelectFirstValue && paramValueDisplayLocal == '') {
-            debouncedQueryCallback(props.query, { input: '', ...allParameters }, (records) => {
-              if (records && records.length > 0 && records[0] && records[0]._fields) {
-                let values = records?.map((r) => r?._fields?.[displayValueRowIndex] || '(no data)');
-                values = props.autoSort ? values.sort() : values;
-                setExtraRecords(records);
-                propagateSelection(undefined, values[0]);
-              }
-            });
-          }
-        }}
-        value={inputValue || ''}
+        value={inputValue}
         onChange={propagateSelection}
+        getOptionLabel={(option) => {
+          if (option === undefined || option === null) {
+            return '';
+          }
+          return option.toString();
+        }}
         renderInput={(params) => (
           <TextField
             {...params}
-            InputLabelProps={{ shrink: true }}
-            placeholder='Start typing...'
-            label={helperText ? helperText : `${label} ${propertyType}`}
-            variant='outlined'
+            placeholder={label ? `${label} ${propertyType}` : 'Start typing...'}
+            label={label ? `${label} ${propertyType}` : 'Parameter'}
+            helperText={helperText}
           />
         )}
-        getOptionLabel={(option) => option?.toString() || ''}
       />
-      {manualParameterSave ? <SelectionConfirmationButton onClick={() => manualHandleParametersUpdate()} /> : <></>}
+      {manualParameterSave ? (
+        <SelectionConfirmationButton
+          onClick={manualHandleParametersUpdate}
+          disabled={disabled || paramValueLocal === props.parameterValue}
+        />
+      ) : (
+        <></>
+      )}
     </div>
   );
 };
