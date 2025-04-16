@@ -57,22 +57,6 @@ export const EXTENSIONS: Record<string, Extension> = {
       'Report actions let dashboard builders add extra interactivity into dashboards. For example, setting parameter values when a cell in a table or a node in a graph is clicked.',
     link: 'https://neo4j.com/professional-services/',
   },
-  'query-translator': {
-    name: 'query-translator',
-    label: 'Text2Cypher: Natural Language Queries',
-    author: 'Neo4j Professional Services',
-    image: 'translator.png',
-    enabled: true,
-    reducerPrefix: QUERY_TRANSLATOR_ACTION_PREFIX,
-    reducerObject: queryTranslatorReducer,
-    cardSettingsComponent: NeoOverrideCardQueryEditor,
-    prepopulateReportFunction: translateQuery,
-    customLoadingIcon: GPT_LOADING_ICON,
-    settingsMenuButton: QueryTranslatorButton,
-    description:
-      'Use natural language to generate Cypher queries in NeoDash. Connect to an LLM through an API, and let NeoDash use your database schema + the report types to generate queries automatically. This extension requires APOC Core installed inside Neo4j.',
-    link: 'https://neo4j.com/professional-services/',
-  },
   forms: {
     name: 'forms',
     label: 'Forms',
