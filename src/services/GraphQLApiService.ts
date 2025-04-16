@@ -9,7 +9,7 @@ const logConnectionAttempt = (message, data = {}) => {
   console.log(`%c[${timestamp}] GraphQL Connection: ${message}`, 'color: #0066cc; font-weight: bold;', data);
 };
 
-const logConnectionError = (message, error = {}) => {
+const logConnectionError = (message, error: Record<string, unknown>) => {
   const timestamp = new Date().toISOString();
   console.error(`%c[${timestamp}] GraphQL Connection Error: ${message}`, 'color: #cc0000; font-weight: bold;', error);
 };
@@ -189,10 +189,10 @@ export class GraphQLApiService {
         this.apiEndpoint = endpoint;
         console.log(`Updated service to use endpoint: ${endpoint}`);
         
-        logConnectionSuccess('Connection established');
+        logConnectionSuccess(`Connection established with endpoint: ${endpoint}`);
         return true;
       } catch (error) {
-        logConnectionError(`Connection failed for endpoint: ${endpoint}`, error);
+        logConnectionError(`Connection failed for endpoint: ${endpoint}`, error as Record<string, unknown>);
         console.error(`Connection failed for endpoint: ${endpoint}`);
         console.error('Error:', error);
       }
@@ -333,7 +333,6 @@ export class GraphQLApiService {
     console.log(`Cypher Query: ${cypherQuery}`);
     console.log(`Database: ${this.database}`);
     console.log(`Parameters:`, JSON.stringify(parameters, null, 2));
-    console.log(`Headers:`, JSON.stringify(this.headers, null, 2));
     console.log(`API Endpoint: ${this.apiEndpoint}`);
     
     // Ensure required parameters always have a default value
@@ -455,7 +454,7 @@ export class GraphQLApiService {
       console.log('=== GRAPHQL API REQUEST END (SUCCESS) ===');
       return result;
     } catch (error: unknown) {
-      logConnectionError('Query execution failed', error);
+      logConnectionError('Query execution failed', error as Record<string, unknown>);
       console.error('=== GRAPHQL API REQUEST ERROR ===');
       
       if (error instanceof Error) {
@@ -563,7 +562,7 @@ export class GraphQLApiService {
       console.log('=== GRAPHQL API METADATA REQUEST END (SUCCESS) ===');
       return response.metadata;
     } catch (error: unknown) {
-      logConnectionError('Metadata retrieval failed', error);
+      logConnectionError('Metadata retrieval failed', error as Record<string, unknown>);
       console.error('=== GRAPHQL API METADATA REQUEST ERROR ===');
       
       if (error instanceof Error) {
