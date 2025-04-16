@@ -7,10 +7,10 @@ services:
     expose:
       - "5005"
     environment:
-      # API URLs - Point to the backend GraphQL service
+      # API URLs - Point to nginx proxy
       # These can be overridden with environment variables
-      - GRAPHQL_API_URL=${GRAPHQL_API_URL:-http://ledgercore-backend:4000/graphql}
-      - API_URL=${API_URL:-http://ledgercore-backend:4000/api}
+      - GRAPHQL_API_URL=${GRAPHQL_API_URL:-http://localhost/graphql}
+      - API_URL=${API_URL:-http://localhost/api}
       
       # Neo4j Connection Defaults - These are handled by the backend
       - DEFAULT_NEO4J_DATABASE=${NEO4J_DATABASE:-bitcoin}
@@ -44,7 +44,5 @@ services:
 
 networks:
   ledgercore-network:
-    driver: bridge
-    # Use external network if your backend is in a separate docker-compose file
     external: true
-    name: ${NETWORK_NAME:-ledgercore-network}
+    name: bitcoin-to-neo4jdash_ledgercore-network
