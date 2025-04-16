@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react';
 import { SSOLoginButton } from '../component/sso/SSOLoginButton';
-import { Button, Dialog, Switch, TextInput, Dropdown, TextLink, IconButton } from '@neo4j-ndl/react';
-import { PlayIconOutline, ArrowLeftIconOutline, StopIconOutline } from '@neo4j-ndl/react/icons';
+import { Button, Dialog, Switch, TextInput, Dropdown } from '@neo4j-ndl/react';
+import { PlayIconOutline, ExclamationTriangleIconSolid } from '@neo4j-ndl/react/icons';
 import { ALLOW_QUERIES_WITHOUT_LOGIN, GRAPHQL_API_URL } from '../config/ApplicationConfig';
 
 /**
  * Configures setting the current GraphQL API connection for the dashboard.
+ * If connection fails, shows a simple error dialog instead of the connection form.
  */
 export default function NeoConnectionModal({
   connected,
@@ -51,86 +52,130 @@ export default function NeoConnectionModal({
     console.log(e);
   }
 
-  return (
-    <>
+  // If we're already connected, or if we're in standalone mode, we don't need the connection modal.
+  if (connected && !standalone) {
+    return <></>;
+  }
+
+  // If the connection failed and we're not in standalone mode, show a simple error dialog
+  if (!connected && !standalone && open) {
+    return (
       <Dialog
-        size='small'
         open={open}
-        onClose={() => {
-          onConnectionModalClose();
-          if (!connected) {
-            setWelcomeScreenOpen(true);
-          }
-        }}
-        aria-labelledby='form-dialog-title'
-        disableCloseButton={!dismissable}
+        onClose={onConnectionModalClose}
+        aria-labelledby="connection-error-dialog-title"
       >
-        <Dialog.Header id='form-dialog-title'>{standalone ? 'Connect to Dashboard' : 'Connect to Database'}</Dialog.Header>
-        <Dialog.Content className='n-flex n-flex-col n-gap-token-4'>
-          {!standalone ? (
-            <div className='n-flex n-flex-col n-gap-token-4'>
-              {/* Hidden fields with configured values */}
-              <input type='hidden' id='apiEndpoint' value={GRAPHQL_API_URL} />
-              <input type='hidden' id='apiKey' value='' />
-              <input type='hidden' id='authToken' value='' />
-              
-              <div className='n-text-neutral-text-weak n-text-center n-p-4 n-bg-neutral-bg-weak n-rounded-md'>
-                <p>Connect to the GraphQL API to start using the dashboard.</p>
-                <p className='n-text-sm n-mt-2'>The API endpoint is automatically configured.</p>
-              </div>
-              
-              <TextInput
-                id='database'
-                value={database}
-                onChange={(e) => setDatabase(e.target.value)}
-                label='Database'
-                placeholder='neo4j'
-                fluid
-              />
-            </div>
-          ) : (
-            <Dropdown
-              id='database'
-              label='Database'
-              type='select'
-              selectProps={{
-                onChange: (newValue) => {
+        <Dialog.Header id="connection-error-dialog-title">
+          <ExclamationTriangleIconSolid className="text-r mr-2" />
+          Unable to connect to the API
+        </Dialog.Header>
+        <Dialog.Content>
+          <p className="mb-4">
+            The application cannot connect to the backend API. Please check your network connection and try again later.
+          </p>
+        </Dialog.Content>
+        <Dialog.Actions>
+          <Button onClick={onConnectionModalClose} color="neutral">
+            OK
+          </Button>
+        </Dialog.Actions>
+      </Dialog>
+    );
+  }
+
+  // For standalone mode, we show a simplified connection dialog.
+  if (standalone) {
+    return (
+      <Dialog
+        open={open}
+        onClose={dismissable ? onConnectionModalClose : undefined}
+        aria-labelledby="connection-dialog-title"
+      >
+        <Dialog.Header id="connection-dialog-title">Connect to Database</Dialog.Header>
+        <Dialog.Content>
+          <div className="n-flex n-flex-col n-gap-4">
+            <div className="n-flex n-flex-col n-gap-2">
+              <label htmlFor="database">Database</label>
+              <Dropdown
+                id="database"
+                value={{ value: database, label: database }}
+                onChange={(newValue) => {
                   if (newValue) {
                     setDatabase(newValue.value);
                   }
-                },
-                options: standaloneDatabaseList.map((option) => ({
-                  label: option,
-                  value: option,
-                })),
-                value: { label: database, value: database },
-                menuPlacement: 'auto',
-              }}
-              fluid
-            ></Dropdown>
-          )}
-
-          {ssoSettings.ssoEnabled ? (
-            <div style={{ marginTop: 10 }}>
-              <Switch
-                label='Use SSO'
-                checked={ssoVisible}
-                onChange={() => setSsoVisible(!ssoVisible)}
-                style={{ marginLeft: '5px' }}
+                }}
+                options={standaloneDatabaseList.map((db) => ({ value: db, label: db }))}
               />
             </div>
-          ) : (
-            <></>
-          )}
-
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              onConnectionModalClose();
-              createConnection(apiEndpoint, apiKey, authToken, database);
+          </div>
+        </Dialog.Content>
+        <Dialog.Actions>
+          <Button
+            onClick={() => {
+              createConnection(
+                standaloneSettings.standaloneDashboardURL,
+                apiKey,
+                authToken,
+                database
+              );
             }}
+            color="primary"
           >
-            {ssoVisible ? (
+            <PlayIconOutline className="btn-icon-base-l" />
+            Connect
+          </Button>
+        </Dialog.Actions>
+      </Dialog>
+    );
+  }
+
+  // Otherwise, show the full connection dialog.
+  return (
+    <Dialog
+      open={open}
+      onClose={dismissable ? onConnectionModalClose : undefined}
+      aria-labelledby="connection-dialog-title"
+    >
+      <Dialog.Header id="connection-dialog-title">Connect to Database</Dialog.Header>
+      <Dialog.Content>
+        <div className="n-flex n-flex-col n-gap-4">
+          <div className="n-flex n-flex-col n-gap-2">
+            <label htmlFor="apiEndpoint">GraphQL API Endpoint</label>
+            <TextInput
+              id="apiEndpoint"
+              value={apiEndpoint}
+              onChange={(e) => setApiEndpoint(e.target.value)}
+              placeholder={GRAPHQL_API_URL || 'http://localhost:4000/graphql'}
+            />
+          </div>
+          <div className="n-flex n-flex-col n-gap-2">
+            <label htmlFor="apiKey">API Key (optional)</label>
+            <TextInput
+              id="apiKey"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="Your API key"
+            />
+          </div>
+          <div className="n-flex n-flex-col n-gap-2">
+            <label htmlFor="database">Database</label>
+            <TextInput
+              id="database"
+              value={database}
+              onChange={(e) => setDatabase(e.target.value)}
+              placeholder="neo4j"
+            />
+          </div>
+          {ssoVisible && (
+            <div className="n-flex n-flex-col n-gap-2">
+              <div className="n-flex n-flex-row n-justify-between n-items-center">
+                <label htmlFor="sso-toggle">Use Single Sign-On</label>
+                <Switch
+                  id="sso-toggle"
+                  checked={ssoVisible}
+                  onChange={() => setSsoVisible(!ssoVisible)}
+                />
+              </div>
               <SSOLoginButton
                 hostname={apiEndpoint}
                 port=""
@@ -142,72 +187,26 @@ export default function NeoConnectionModal({
                 }}
                 providers={ssoSettings.ssoProviders}
               />
-            ) : (
-              <div className="n-flex n-flex-row n-justify-center n-gap-4" style={{ marginTop: '20px', marginBottom: '20px' }}>
-                {ALLOW_QUERIES_WITHOUT_LOGIN && (
-                  <Button
-                    type='button'
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onConnectionModalClose();
-                      // Use configured API endpoint with no authentication
-                      createConnection(GRAPHQL_API_URL, '', '', database || 'neo4j');
-                    }}
-                    color="primary"
-                    size='large'
-                  >
-                    Skip Login
-                    <StopIconOutline className='btn-icon-base-r' />
-                  </Button>
-                )}
-                <Button
-                  type='submit'
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onConnectionModalClose();
-                    // Use the configured API endpoint
-                    createConnection(GRAPHQL_API_URL, '', '', database);
-                  }}
-                  size='large'
-                >
-                  Connect
-                  <PlayIconOutline className='btn-icon-base-r' />
-                </Button>
-              </div>
-            )}
-          </form>
-        </Dialog.Content>
-        <Dialog.Actions
-          style={{
-            background: '#555',
-            marginLeft: '-3rem',
-            marginRight: '-3rem',
-            marginBottom: '-3rem',
-            padding: '3rem',
-          }}
-        >
-          {standalone ? (
-            <div style={{ color: 'lightgrey' }}>
-              {standaloneSettings.standaloneDashboardURL === '' ? (
-                <>
-                  Sign in to continue. You will be connected to the GraphQL API, and load a dashboard called&nbsp;
-                  <b>{standaloneSettings.standaloneDashboardName}</b>.
-                </>
-              ) : (
-                <> Sign in to continue. You will be connected to the GraphQL API, and load a dashboard.</>
-              )}
             </div>
-          ) : (
-            <div style={{ color: 'white' }}>
-              {ALLOW_QUERIES_WITHOUT_LOGIN ? (
-                <>Enter your GraphQL API endpoint and authentication details to start, or click "Skip Login" to use the default connection. The API should implement the required GraphQL schema for Neo4j data access.</>
-              ) : (
-                <>Enter your GraphQL API endpoint and authentication details to start. The API should implement the required GraphQL schema for Neo4j data access.</>
+          )}
+          {!ssoVisible && (
+            <div className="n-flex n-flex-row n-justify-center n-gap-4" style={{ marginTop: '20px', marginBottom: '20px' }}>
+              {ALLOW_QUERIES_WITHOUT_LOGIN && (
+                <Button
+                  type='button'
+                  onClick={() => {
+                    createConnection(apiEndpoint, apiKey, authToken, database);
+                  }}
+                  color="primary"
+                >
+                  <PlayIconOutline className="btn-icon-base-l" />
+                  Connect
+                </Button>
               )}
             </div>
           )}
-        </Dialog.Actions>
-      </Dialog>
-    </>
+        </div>
+      </Dialog.Content>
+    </Dialog>
   );
 }
