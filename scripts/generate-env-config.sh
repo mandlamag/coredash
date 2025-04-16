@@ -7,11 +7,13 @@
 ENV_FILE=/usr/share/nginx/html/env.js
 
 # Start with an empty window.__ENV__ object
-echo "window.__ENV__ = {" > $ENV_FILE
+echo "// This file is dynamically generated at container startup" > $ENV_FILE
+echo "// It injects environment variables into the browser" >> $ENV_FILE
+echo "window.__ENV__ = {" >> $ENV_FILE
 
 # Add all environment variables with the prefix REACT_APP_
 # This makes them available to the application
-for envvar in $(env | grep -E '^(REACT_APP_|API_URL|GRAPHQL_API_URL|DEFAULT_NEO4J_)' | sort); do
+for envvar in $(env | grep -E '^(REACT_APP_|API_URL|GRAPHQL_API_URL|DEFAULT_NEO4J_|ALLOW_QUERIES_WITHOUT_LOGIN)' | sort); do
   # Extract the key and value
   key=$(echo $envvar | cut -d= -f1)
   value=$(echo $envvar | cut -d= -f2-)

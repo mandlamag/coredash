@@ -1,22 +1,22 @@
 # build stage
 FROM node:18-alpine AS build-stage
 
+RUN yarn global add typescript@4.9.5 jest
 WORKDIR /usr/local/src/neodash
 
-# Copy package files first for better caching
+# Pull source code if you have not cloned the repository
+#RUN apk add --no-cache git
+#RUN git clone https://github.com/neo4j-labs/neodash.git /usr/local/src/neodash
+
+# Copy sources and install/build
 COPY ./package.json /usr/local/src/neodash/package.json
 COPY ./yarn.lock /usr/local/src/neodash/yarn.lock
 
-# Install dependencies with --ignore-engines flag
-RUN yarn install --ignore-engines --network-timeout 600000
+RUN yarn install
+# Fix Babel compatibility issues for Node.js 18
+RUN yarn add --dev @babel/traverse@7.23.2 @babel/core@7.23.2 @babel/helper-replace-supers@7.22.9 @babel/preset-env@7.22.9 @babel/plugin-transform-classes@7.22.9 @babel/helper-module-transforms@7.22.9
 
-# Copy the rest of the application
 COPY ./ /usr/local/src/neodash
-
-# Add NODE_OPTIONS to increase memory limit and bypass version checks
-ENV NODE_OPTIONS="--max-old-space-size=4096 --no-node-snapshot"
-
-# Build the application
 RUN yarn run build-minimal
 
 # production stage

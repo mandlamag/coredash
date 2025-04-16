@@ -1,4 +1,3 @@
-
 ## LedgerCore Dashboard
 
 ![LedgerCore](public/ss_logo.png)
@@ -9,17 +8,57 @@ LedgerCore Dashboard is a web-based tool for visualizing blockchain data through
 LedgerCore Dashboard supports presenting your data as tables, graphs, bar charts, line charts, maps, and more. It contains a query editor to directly write the queries that populate the reports. You can save dashboards and share them with others.
 
 ## Run LedgerCore Dashboard
-You can run LedgerCore Dashboard in one of two ways:
+You can run LedgerCore Dashboard in one of three ways:
 
 1. You can run the application locally in development mode (see Build and Run section below)
 2. For deployments, you can build the application yourself
+3. Using Docker (see Docker section below)
 
 ```
 # Run the application on http://localhost:5005
 yarn run dev
 ```
 
+## Docker
 
+### Running with Docker Compose
+
+The application is configured to run in Docker and connect to your existing `ledgercore-backend` container:
+
+```bash
+# Start the dashboard container
+docker-compose up -d
+```
+
+### Environment Configuration
+
+The Docker setup uses environment variables for configuration. You can customize these in several ways:
+
+1. Edit the `.env` file (for local development)
+2. Override variables when running docker-compose:
+
+```bash
+GRAPHQL_API_URL=http://custom-backend:4000/graphql docker-compose up -d
+```
+
+3. Set environment variables in your CI/CD pipeline
+
+### Key Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| GRAPHQL_API_URL | URL of the GraphQL API | http://ledgercore-backend:4000/graphql |
+| API_URL | URL of the REST API | http://ledgercore-backend:4000/api |
+| NEO4J_DATABASE | Default Neo4j database | bitcoin |
+| ALLOW_QUERIES_WITHOUT_LOGIN | Allow running queries without login | true |
+
+### Network Configuration
+
+The Docker Compose file is configured to use an external network named `ledgercore-network` to connect to your existing `ledgercore-backend` container. If your backend uses a different network, you can specify it:
+
+```bash
+NETWORK_NAME=your-network-name docker-compose up -d
+```
 
 ## Build and Run
 This project uses `yarn` to install, run, build prettify and apply linting to the code.

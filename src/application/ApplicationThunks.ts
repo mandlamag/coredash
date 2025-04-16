@@ -2,7 +2,7 @@ import { GraphQLClient } from 'graphql-request';
 import { getGraphQLApiService } from '../services/GraphQLApiService';
 import { GraphQLApiError } from '../services/GraphQLApiError';
 import { initializeSSO } from '../component/sso/SSOUtils';
-import { DEFAULT_SCREEN, Screens } from '../config/ApplicationConfig';
+import { DEFAULT_SCREEN, Screens, GRAPHQL_API_URL } from '../config/ApplicationConfig';
 import { setDashboard } from '../dashboard/DashboardActions';
 import { NEODASH_VERSION, VERSION_TO_MIGRATE } from '../dashboard/DashboardReducer';
 import {
@@ -61,9 +61,10 @@ import { createUUID } from '../utils/uuid';
  * @param apiKey - API key for authentication (optional).
  * @param authToken - Authentication token (optional).
  * @param database - the Neo4j database to connect to (optional).
+ * @param skipConnectionModal - if true, will not show the connection modal even if connection fails
  */
 export const createConnectionThunk =
-  (apiEndpoint: string, apiKey: string, authToken: string, database: string) => (dispatch: any, getState: any) => {
+  (apiEndpoint: string, apiKey: string, authToken: string, database: string, skipConnectionModal = false) => (dispatch: any, getState: any) => {
     const loggingState = getState();
     const loggingSettings = applicationGetLoggingSettings(loggingState);
     const neodashMode = applicationIsStandalone(loggingState) ? 'Standalone' : 'Editor';
@@ -95,7 +96,6 @@ export const createConnectionThunk =
       // Execute the test query to verify connection
       client.request(testQuery)
         .then(() => {
-          // Connection successful
           // Connection successful
           dispatch(setConnectionProperties(apiEndpoint, apiKey, authToken, database));
           dispatch(setConnectionModalOpen(false));
@@ -259,6 +259,9 @@ export const createConnectionThunk =
           
           // Update application state to reflect failed connection
           dispatch(setConnected(false));
+          if (!skipConnectionModal) {
+            dispatch(setConnectionModalOpen(true));
+          }
         });
     } catch (e) {
       dispatch(createNotificationThunk('Unable to establish connection', e instanceof Error ? e.message : String(e)));
@@ -694,12 +697,11 @@ export const loadApplicationConfigThunk = () => async (dispatch: any, getState: 
           );
           dispatch(
             createConnectionThunk(
-              config.standaloneProtocol,
-              config.standaloneHost,
-              config.standalonePort,
+              `${config.standaloneProtocol}://${config.standaloneHost}:${config.standalonePort}/graphql`,
+              '', // No API key
+              '', // No auth token
               config.standaloneDatabase,
-              credentials.username,
-              credentials.password
+              true // Skip connection modal
             )
           );
         } else {
@@ -788,14 +790,14 @@ export const initializeApplicationAsEditorThunk = (_: any, paramsToSetAfterConne
     dispatch(setWelcomeScreenOpen(false));
     
     // First, automatically connect to the GraphQL API with hardcoded values
-    const apiEndpoint = 'http://localhost:4000/graphql';
+    const apiEndpoint = GRAPHQL_API_URL;
     const apiKey = '';
     const authToken = '';
     const database = 'bitcoin';
     
     // Set connection properties and create the connection
     dispatch(setConnectionProperties(apiEndpoint, apiKey, authToken, database));
-    dispatch(createConnectionThunk(apiEndpoint, apiKey, authToken, database));
+    dispatch(createConnectionThunk(apiEndpoint, apiKey, authToken, database, true));
     
     // Load the Bitcoin dashboard from the config file after connecting
     fetch('/config/bitcoin-dashboard.json')
@@ -870,10 +872,11 @@ export const initializeApplicationAsStandaloneThunk =
     if (config.standaloneApiKey || config.standaloneAuthToken) {
       dispatch(
         createConnectionThunk(
-          config.standaloneApiEndpoint,
-          config.standaloneApiKey,
-          config.standaloneAuthToken,
-          config.standaloneDatabase
+          `${config.standaloneProtocol}://${config.standaloneHost}:${config.standalonePort}/graphql`,
+          '', // No API key
+          '', // No auth token
+          config.standaloneDatabase,
+          true // Skip connection modal
         )
       );
     } else {

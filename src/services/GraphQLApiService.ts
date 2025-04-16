@@ -1,7 +1,7 @@
 import { GraphQLClient } from 'graphql-request';
 import { gql } from 'graphql-request';
 import { GraphQLApiError } from './GraphQLApiError';
-import { ALLOW_QUERIES_WITHOUT_LOGIN } from '../config/ApplicationConfig';
+import { ALLOW_QUERIES_WITHOUT_LOGIN, GRAPHQL_API_URL } from '../config/ApplicationConfig';
 
 /**
  * GraphQLApiService - A service for interacting with the GraphQL API.
@@ -583,24 +583,15 @@ export const getGraphQLApiService = (
   authToken?: string,
   database?: string
 ): GraphQLApiService => {
-  // If ALLOW_QUERIES_WITHOUT_LOGIN is enabled, we can create a service instance with default values
   if (!graphQLApiServiceInstance) {
-    if (apiEndpoint) {
-      // If an endpoint is provided, use it with the provided credentials
-      graphQLApiServiceInstance = new GraphQLApiService(apiEndpoint, apiKey, authToken, database);
-    } else if (ALLOW_QUERIES_WITHOUT_LOGIN) {
-      // If no endpoint is provided but queries without login are allowed, use default values
-      graphQLApiServiceInstance = new GraphQLApiService(
-        'http://localhost:4000/graphql', // Default endpoint
-        '', // No API key
-        '', // No auth token
-        database || 'neo4j' // Default database if not provided
-      );
-    } else {
-      throw new Error('GraphQLApiService not initialized. Please provide an API endpoint.');
-    }
-  } else if (apiEndpoint) {
-    // Update existing instance if endpoint is provided
+    graphQLApiServiceInstance = new GraphQLApiService(
+      apiEndpoint || GRAPHQL_API_URL || 'http://localhost:8080/graphql', // Use configured URL with fallback
+      apiKey,
+      authToken,
+      database
+    );
+  } else if (apiEndpoint || apiKey || authToken || database) {
+    // Update the existing instance if new parameters are provided
     graphQLApiServiceInstance.updateConfig(apiEndpoint, apiKey, authToken, database);
   }
 

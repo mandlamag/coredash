@@ -210,10 +210,10 @@ const mapStateToProps = (state) => ({
 });
 
 const mapDispatchToProps = (dispatch) => ({
-  createConnection: (protocol, url, port, database, username, password) => {
+  createConnection: (apiEndpoint, apiKey, authToken, database, skipConnectionModal = false) => {
     dispatch(setConnected(false));
     dispatch(resetSessionStorage());
-    dispatch(createConnectionThunk(protocol, url, port, database, username, password));
+    dispatch(createConnectionThunk(apiEndpoint, apiKey, authToken, database, skipConnectionModal));
   },
   createConnectionFromDesktopIntegration: () => {
     dispatch(setConnected(false));

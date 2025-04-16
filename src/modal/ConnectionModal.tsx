@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { SSOLoginButton } from '../component/sso/SSOLoginButton';
 import { Button, Dialog, Switch, TextInput, Dropdown, TextLink, IconButton } from '@neo4j-ndl/react';
 import { PlayIconOutline, ArrowLeftIconOutline, StopIconOutline } from '@neo4j-ndl/react/icons';
-import { ALLOW_QUERIES_WITHOUT_LOGIN } from '../config/ApplicationConfig';
+import { ALLOW_QUERIES_WITHOUT_LOGIN, GRAPHQL_API_URL } from '../config/ApplicationConfig';
 
 /**
  * Configures setting the current GraphQL API connection for the dashboard.
@@ -69,8 +69,8 @@ export default function NeoConnectionModal({
         <Dialog.Content className='n-flex n-flex-col n-gap-token-4'>
           {!standalone ? (
             <div className='n-flex n-flex-col n-gap-token-4'>
-              {/* Hidden fields with hardcoded values */}
-              <input type='hidden' id='apiEndpoint' value='http://localhost:4000/graphql' />
+              {/* Hidden fields with configured values */}
+              <input type='hidden' id='apiEndpoint' value={GRAPHQL_API_URL} />
               <input type='hidden' id='apiKey' value='' />
               <input type='hidden' id='authToken' value='' />
               
@@ -150,8 +150,8 @@ export default function NeoConnectionModal({
                     onClick={(e) => {
                       e.preventDefault();
                       onConnectionModalClose();
-                      // Use default API endpoint with no authentication
-                      createConnection('http://localhost:4000/graphql', '', '', database || 'neo4j');
+                      // Use configured API endpoint with no authentication
+                      createConnection(GRAPHQL_API_URL, '', '', database || 'neo4j');
                     }}
                     color="primary"
                     size='large'
@@ -165,8 +165,8 @@ export default function NeoConnectionModal({
                   onClick={(e) => {
                     e.preventDefault();
                     onConnectionModalClose();
-                    // Always use the hardcoded API endpoint
-                    createConnection('http://localhost:4000/graphql', '', '', database);
+                    // Use the configured API endpoint
+                    createConnection(GRAPHQL_API_URL, '', '', database);
                   }}
                   size='large'
                 >

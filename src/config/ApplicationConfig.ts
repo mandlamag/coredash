@@ -6,6 +6,7 @@ import {
   DASHBOARD_HEADER_BUTTON_COLOR as ENV_BUTTON_COLOR,
   DASHBOARD_HEADER_TITLE_COLOR as ENV_TITLE_COLOR,
   ALLOW_QUERIES_WITHOUT_LOGIN as ENV_ALLOW_QUERIES_WITHOUT_LOGIN,
+  GRAPHQL_API_URL as ENV_GRAPHQL_API_URL,
 } from './EnvConfig';
 
 export const enum Screens {
@@ -20,6 +21,9 @@ export const DEFAULT_SCREEN = Screens.WELCOME_SCREEN;
 // Use environment variables with fallbacks to style config and then hardcoded defaults
 export { DEFAULT_NEO4J_URL };
 export { DEFAULT_DASHBOARD_TITLE };
+
+// GraphQL API URL from environment config
+export const GRAPHQL_API_URL = ENV_GRAPHQL_API_URL;
 
 export const DASHBOARD_HEADER_COLOR = styleConfig?.getStyle()?.DASHBOARD_HEADER_COLOR || ENV_HEADER_COLOR;
 
