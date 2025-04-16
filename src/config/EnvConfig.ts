@@ -34,8 +34,8 @@ interface EnvConfig {
 // Default configuration values (fallback)
 const DEFAULT_CONFIG: EnvConfig = {
   // API URLs
-  API_URL: 'http://localhost:4000/api',
-  GRAPHQL_API_URL: 'http://localhost:4000/graphql',
+  API_URL: '/api',
+  GRAPHQL_API_URL: '/graphql',
   
   // Neo4j Connection Defaults
   DEFAULT_NEO4J_URL: 'localhost',

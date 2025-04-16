@@ -5,14 +5,14 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "5006:5005"
+      - "5005:5005"
     expose:
       - "5005"
     environment:
-      # API URLs - Use absolute URLs to directly connect to the backend
+      # API URLs - Use relative paths to leverage NGINX proxy
       # These can be overridden with environment variables
-      - GRAPHQL_API_URL=${GRAPHQL_API_URL:-http://ledgercore-backend:4000/graphql}
-      - API_URL=${API_URL:-http://ledgercore-backend:4000/api}
+      - GRAPHQL_API_URL=${GRAPHQL_API_URL:-/graphql}
+      - API_URL=${API_URL:-/api}
       
       # Neo4j Connection Defaults - These are handled by the backend
       - DEFAULT_NEO4J_DATABASE=${NEO4J_DATABASE:-bitcoin}
@@ -27,7 +27,7 @@ services:
       - DASHBOARD_HEADER_TITLE_COLOR=#FFFFFF
     restart: unless-stopped
     networks:
-      - ledgercore-network
+      - default
     # This allows the container to find services on the host machine if needed
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -42,9 +42,9 @@ services:
     depends_on:
       - ledgercore-dashboard
     networks:
-      - ledgercore-network
+      - default
 
 networks:
-  ledgercore-network:
-    name: bitcoin-to-neo4jdash_ledgercore-network
+  default:
     external: true
+    name: bitcoin-to-neo4jdash_ledgercore-network
