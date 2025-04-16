@@ -50,19 +50,24 @@ export class GraphQLApiService {
     console.log(`API Endpoint: ${this.apiEndpoint}`);
     console.log(`Headers:`, JSON.stringify(this.headers, null, 2));
     console.log(`Database: ${this.database}`);
+    console.log(`Navigator online status: ${navigator.onLine}`);
+    console.log(`Window location: ${window.location.href}`);
     
     try {
       // If ALLOW_QUERIES_WITHOUT_LOGIN is enabled and we have no auth credentials,
-      // we can skip the actual verification and return true
-      if (ALLOW_QUERIES_WITHOUT_LOGIN && 
-          !this.headers['x-api-key'] && 
-          !this.headers['Authorization']) {
-        console.log('Skipping connection verification due to ALLOW_QUERIES_WITHOUT_LOGIN setting');
-        console.log('=== GRAPHQL API CONNECTION VERIFICATION END (SKIPPED) ===');
+      // we can skip the connection verification
+      if (
+        ALLOW_QUERIES_WITHOUT_LOGIN &&
+        !this.headers['Authorization'] &&
+        !this.headers['x-api-key']
+      ) {
+        console.log(
+          'ALLOW_QUERIES_WITHOUT_LOGIN is enabled and no auth credentials provided, skipping connection verification'
+        );
         return true;
       }
 
-      console.log('Sending introspection query to verify connection...');
+      console.log('Sending GraphQL introspection query...');
       const query = gql`
         query {
           __schema {
@@ -74,44 +79,110 @@ export class GraphQLApiService {
       `;
 
       console.time('Connection Verification Duration');
-      const response = await this.client.request(query);
+      const result = await this.client.request(query);
       console.timeEnd('Connection Verification Duration');
       
-      console.log('Connection verified successfully');
-      console.log(`Response: ${JSON.stringify(response, null, 2)}`);
+      console.log('Connection successful!', result);
+      console.log(`Connection verification took ${Date.now()}ms`);
       console.log('=== GRAPHQL API CONNECTION VERIFICATION END (SUCCESS) ===');
       return true;
-    } catch (error: unknown) {
-      console.error('=== GRAPHQL API CONNECTION VERIFICATION ERROR ===');
+    } catch (error: any) {
+      console.error('=== GRAPHQL API CONNECTION ERROR ===');
+      console.error('Connection failed with error:', error);
       
       if (error instanceof Error) {
-        console.error(`Error type: ${error.constructor.name}`);
-        console.error(`Error message: ${error.message}`);
-        console.error(`Stack trace: ${error.stack}`);
-      } else {
-        console.error(`Unknown error type: ${typeof error}`);
-        console.error(`Error value: ${String(error)}`);
+        console.error('Error type:', error.constructor.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
       }
       
-      // Check if error has response property (GraphQL client error)
-      if (error && typeof error === 'object' && 'response' in error) {
-        const graphqlError = error as { response: { data?: any, status?: number, headers?: any } };
-        if (graphqlError.response) {
-          console.error('Response data:', JSON.stringify(graphqlError.response.data, null, 2));
-          console.error('Response status:', graphqlError.response.status);
-          console.error('Response headers:', JSON.stringify(graphqlError.response.headers, null, 2));
+      console.error('Navigator online status:', navigator.onLine);
+      console.error('Window location:', window.location.href);
+      
+      // Log additional network information if available
+      try {
+        if ('connection' in navigator && navigator.connection) {
+          console.error('Network type:', (navigator as any).connection.type);
+          console.error('Network speed:', (navigator as any).connection.downlink);
         }
+      } catch (e) {
+        console.error('Could not access network information');
       }
       
-      // Check if error has request property
-      if (error && typeof error === 'object' && 'request' in error) {
-        const requestError = error as { request: any };
-        console.error('Request:', JSON.stringify(requestError.request, null, 2));
-      }
-      
-      console.error('=== GRAPHQL API CONNECTION VERIFICATION END (ERROR) ===');
-      throw GraphQLApiError.fromError(error);
+      throw new GraphQLApiError('Failed to connect to GraphQL API', error);
+    } finally {
+      console.log('=== GRAPHQL API CONNECTION VERIFICATION END ===');
     }
+  }
+
+  /**
+   * Try to connect using multiple possible endpoints.
+   * This helps overcome Docker networking issues by trying different connection strategies.
+   * @returns A promise that resolves to true if any connection is successful.
+   */
+  async tryMultipleConnections(): Promise<boolean> {
+    console.log('=== TRYING MULTIPLE CONNECTION STRATEGIES ===');
+    
+    // Original endpoint from configuration
+    const originalEndpoint = this.apiEndpoint;
+    console.log(`Original endpoint: ${originalEndpoint}`);
+    
+    // List of fallback endpoints to try
+    const fallbackEndpoints = [
+      originalEndpoint,                              // Try original first
+      '/graphql',                                    // Relative path (for NGINX proxy)
+      window.location.origin + '/graphql',           // Absolute path using current origin
+      'http://localhost:4000/graphql',               // Direct localhost connection
+      'http://host.docker.internal:4000/graphql'     // Special Docker hostname for host machine
+    ];
+    
+    // Filter out duplicates
+    const uniqueEndpoints = [...new Set(fallbackEndpoints)];
+    console.log(`Will try ${uniqueEndpoints.length} different endpoints:`, uniqueEndpoints);
+    
+    // Try each endpoint
+    for (const endpoint of uniqueEndpoints) {
+      console.log(`Trying endpoint: ${endpoint}`);
+      
+      try {
+        // Temporarily update the client with the new endpoint
+        const tempClient = new GraphQLClient(endpoint, { headers: this.headers });
+        const originalClient = this.client;
+        this.client = tempClient;
+        
+        // Try to connect
+        const query = gql`
+          query {
+            __schema {
+              queryType {
+                name
+              }
+            }
+          }
+        `;
+        
+        const result = await this.client.request(query);
+        console.log(`Connection successful with endpoint: ${endpoint}`);
+        
+        // If successful, update the service to use this endpoint
+        this.apiEndpoint = endpoint;
+        console.log(`Updated service to use endpoint: ${endpoint}`);
+        
+        return true;
+      } catch (error) {
+        console.error(`Connection failed for endpoint: ${endpoint}`);
+        console.error('Error:', error);
+      }
+    }
+    
+    // If we get here, all connection attempts failed
+    console.error('All connection attempts failed');
+    
+    // Restore original endpoint
+    this.apiEndpoint = originalEndpoint;
+    this.client = new GraphQLClient(originalEndpoint, { headers: this.headers });
+    
+    throw new GraphQLApiError('Failed to connect to GraphQL API using any available endpoint');
   }
 
   /**
@@ -533,35 +604,50 @@ export class GraphQLApiService {
   }
 
   /**
-   * Update the client configuration.
-   * @param apiEndpoint - The URL of the GraphQL API endpoint.
-   * @param apiKey - Optional API key for authentication.
-   * @param authToken - Optional authentication token.
-   * @param database - Optional database name.
+   * Get the current API endpoint.
+   * @returns The current API endpoint URL.
+   */
+  getApiEndpoint(): string {
+    return this.apiEndpoint;
+  }
+
+  /**
+   * Update the service configuration.
+   * @param apiEndpoint - Optional new API endpoint.
+   * @param apiKey - Optional new API key.
+   * @param authToken - Optional new auth token.
+   * @param database - Optional new database name.
    */
   updateConfig(apiEndpoint?: string, apiKey?: string, authToken?: string, database?: string): void {
+    console.log('=== UPDATING GRAPHQL API SERVICE CONFIG ===');
+    
     if (apiEndpoint) {
+      console.log(`Updating API endpoint: ${this.apiEndpoint} -> ${apiEndpoint}`);
       this.apiEndpoint = apiEndpoint;
+      // Recreate client with new endpoint
+      this.client = new GraphQLClient(this.apiEndpoint, { headers: this.headers });
     }
-
-    // Reset headers
-    this.headers = {};
-
+    
     if (apiKey) {
+      console.log('Updating API key');
       this.headers['x-api-key'] = apiKey;
     }
-
+    
     if (authToken) {
+      console.log('Updating auth token');
       this.headers['Authorization'] = `Bearer ${authToken}`;
     }
-
+    
     if (database) {
+      console.log(`Updating database: ${this.database} -> ${database}`);
       this.database = database;
       this.headers['x-database'] = database;
     }
-
-    // Recreate client with new configuration
+    
+    // Update client headers
     this.client = new GraphQLClient(this.apiEndpoint, { headers: this.headers });
+    
+    console.log('=== GRAPHQL API SERVICE CONFIG UPDATED ===');
   }
 }
 
@@ -584,8 +670,15 @@ export const getGraphQLApiService = (
   database?: string
 ): GraphQLApiService => {
   if (!graphQLApiServiceInstance) {
+    // Use configured URL with fallbacks
+    const configuredEndpoint = apiEndpoint || GRAPHQL_API_URL;
+    
+    console.log('=== GRAPHQL API SERVICE INITIALIZATION ===');
+    console.log(`Configured endpoint: ${configuredEndpoint}`);
+    
+    // Create service with the configured endpoint
     graphQLApiServiceInstance = new GraphQLApiService(
-      apiEndpoint || GRAPHQL_API_URL || 'http://localhost:8080/graphql', // Use configured URL with fallback
+      configuredEndpoint || '/graphql', // Default to relative path if nothing else is provided
       apiKey,
       authToken,
       database

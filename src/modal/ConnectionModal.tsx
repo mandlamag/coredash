@@ -3,6 +3,7 @@ import { SSOLoginButton } from '../component/sso/SSOLoginButton';
 import { Button, Dialog, Switch, TextInput, Dropdown } from '@neo4j-ndl/react';
 import { PlayIconOutline, ExclamationTriangleIconSolid } from '@neo4j-ndl/react/icons';
 import { ALLOW_QUERIES_WITHOUT_LOGIN, GRAPHQL_API_URL } from '../config/ApplicationConfig';
+import { getGraphQLApiService } from '../services/GraphQLApiService';
 
 /**
  * Configures setting the current GraphQL API connection for the dashboard.
@@ -74,10 +75,36 @@ export default function NeoConnectionModal({
           <p className="n-mt-2 n-text-sm n-text-neutral-500">
             If you're running in Docker, ensure both frontend and backend containers are on the same network.
           </p>
+          <div className="n-mt-4">
+            <Button 
+              onClick={() => {
+                // Try to connect using multiple fallback strategies
+                const service = getGraphQLApiService();
+                service.tryMultipleConnections()
+                  .then(() => {
+                    // If successful, create the connection with the updated endpoint
+                    createConnection(
+                      service.getApiEndpoint(),
+                      apiKey,
+                      authToken,
+                      database
+                    );
+                  })
+                  .catch(error => {
+                    console.error("All connection attempts failed:", error);
+                    // Keep dialog open
+                  });
+              }} 
+              color="primary" 
+              size="small"
+            >
+              Try Alternative Connections
+            </Button>
+          </div>
         </Dialog.Content>
         <Dialog.Actions className="n-justify-end">
           <Button onClick={onConnectionModalClose} color="neutral" size="small">
-            OK
+            Close
           </Button>
         </Dialog.Actions>
       </Dialog>
