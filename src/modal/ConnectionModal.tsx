@@ -64,18 +64,17 @@ export default function NeoConnectionModal({
         open={open}
         onClose={onConnectionModalClose}
         aria-labelledby="connection-error-dialog-title"
+        size="small"
       >
-        <Dialog.Header id="connection-error-dialog-title">
-          <ExclamationTriangleIconSolid className="text-r mr-2" />
-          Unable to connect to the API
+        <Dialog.Header id="connection-error-dialog-title" className="n-flex n-items-center n-gap-2">
+          <ExclamationTriangleIconSolid className="text-r" />
+          API Connection Error
         </Dialog.Header>
-        <Dialog.Content>
-          <p className="mb-4">
-            The application cannot connect to the backend API. Please check your network connection and try again later.
-          </p>
+        <Dialog.Content className="n-py-2">
+          <p>Unable to connect to the backend API.</p>
         </Dialog.Content>
-        <Dialog.Actions>
-          <Button onClick={onConnectionModalClose} color="neutral">
+        <Dialog.Actions className="n-justify-end">
+          <Button onClick={onConnectionModalClose} color="neutral" size="small">
             OK
           </Button>
         </Dialog.Actions>
