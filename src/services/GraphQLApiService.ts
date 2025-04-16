@@ -3,6 +3,22 @@ import { gql } from 'graphql-request';
 import { GraphQLApiError } from './GraphQLApiError';
 import { ALLOW_QUERIES_WITHOUT_LOGIN, GRAPHQL_API_URL } from '../config/ApplicationConfig';
 
+// Add detailed connection logging to console
+const logConnectionAttempt = (message, data = {}) => {
+  const timestamp = new Date().toISOString();
+  console.log(`%c[${timestamp}] GraphQL Connection: ${message}`, 'color: #0066cc; font-weight: bold;', data);
+};
+
+const logConnectionError = (message, error = {}) => {
+  const timestamp = new Date().toISOString();
+  console.error(`%c[${timestamp}] GraphQL Connection Error: ${message}`, 'color: #cc0000; font-weight: bold;', error);
+};
+
+const logConnectionSuccess = (message, data = {}) => {
+  const timestamp = new Date().toISOString();
+  console.log(`%c[${timestamp}] GraphQL Connection Success: ${message}`, 'color: #00cc00; font-weight: bold;', data);
+};
+
 /**
  * GraphQLApiService - A service for interacting with the GraphQL API.
  * This service provides methods for executing queries, retrieving metadata,
@@ -46,6 +62,7 @@ export class GraphQLApiService {
    * @returns A promise that resolves to true if the connection is successful, or rejects with an error.
    */
   async verifyConnection(): Promise<boolean> {
+    logConnectionAttempt('Verifying connection...');
     console.log('=== GRAPHQL API CONNECTION VERIFICATION START ===');
     console.log(`API Endpoint: ${this.apiEndpoint}`);
     console.log(`Headers:`, JSON.stringify(this.headers, null, 2));
@@ -64,6 +81,7 @@ export class GraphQLApiService {
         console.log(
           'ALLOW_QUERIES_WITHOUT_LOGIN is enabled and no auth credentials provided, skipping connection verification'
         );
+        logConnectionSuccess('Connection verification skipped');
         return true;
       }
 
@@ -84,9 +102,11 @@ export class GraphQLApiService {
       
       console.log('Connection successful!', result);
       console.log(`Connection verification took ${Date.now()}ms`);
+      logConnectionSuccess('Connection verified');
       console.log('=== GRAPHQL API CONNECTION VERIFICATION END (SUCCESS) ===');
       return true;
     } catch (error: any) {
+      logConnectionError('Connection failed', error);
       console.error('=== GRAPHQL API CONNECTION ERROR ===');
       console.error('Connection failed with error:', error);
       
@@ -121,6 +141,7 @@ export class GraphQLApiService {
    * @returns A promise that resolves to true if any connection is successful.
    */
   async tryMultipleConnections(): Promise<boolean> {
+    logConnectionAttempt('Trying multiple connections...');
     console.log('=== TRYING MULTIPLE CONNECTION STRATEGIES ===');
     
     // Original endpoint from configuration
@@ -168,14 +189,17 @@ export class GraphQLApiService {
         this.apiEndpoint = endpoint;
         console.log(`Updated service to use endpoint: ${endpoint}`);
         
+        logConnectionSuccess('Connection established');
         return true;
       } catch (error) {
+        logConnectionError(`Connection failed for endpoint: ${endpoint}`, error);
         console.error(`Connection failed for endpoint: ${endpoint}`);
         console.error('Error:', error);
       }
     }
     
     // If we get here, all connection attempts failed
+    logConnectionError('All connection attempts failed');
     console.error('All connection attempts failed');
     
     // Restore original endpoint
@@ -303,6 +327,7 @@ export class GraphQLApiService {
   async executeQuery(cypherQuery: string, parameters: Record<string, any> = {}): Promise<any> {
     // Log the incoming query request with timestamp for performance tracking
     const startTime = Date.now();
+    logConnectionAttempt('Executing query...');
     console.log('=== GRAPHQL API REQUEST START ===');
     console.log(`Timestamp: ${new Date().toISOString()}`);
     console.log(`Cypher Query: ${cypherQuery}`);
@@ -426,9 +451,11 @@ export class GraphQLApiService {
       }
       
       console.log(`Request completed in ${Date.now() - startTime}ms`);
+      logConnectionSuccess('Query executed successfully');
       console.log('=== GRAPHQL API REQUEST END (SUCCESS) ===');
       return result;
     } catch (error: unknown) {
+      logConnectionError('Query execution failed', error);
       console.error('=== GRAPHQL API REQUEST ERROR ===');
       
       if (error instanceof Error) {
@@ -481,6 +508,7 @@ export class GraphQLApiService {
    * @returns A promise that resolves to the database metadata.
    */
   async getMetadata(): Promise<any> {
+    logConnectionAttempt('Retrieving metadata...');
     console.log('=== GRAPHQL API METADATA REQUEST START ===');
     console.log(`API Endpoint: ${this.apiEndpoint}`);
     console.log(`Database: ${this.database}`);
@@ -531,9 +559,11 @@ export class GraphQLApiService {
         console.log('Warning: Empty metadata received from GraphQL API');
       }
       
+      logConnectionSuccess('Metadata retrieved');
       console.log('=== GRAPHQL API METADATA REQUEST END (SUCCESS) ===');
       return response.metadata;
     } catch (error: unknown) {
+      logConnectionError('Metadata retrieval failed', error);
       console.error('=== GRAPHQL API METADATA REQUEST ERROR ===');
       
       if (error instanceof Error) {
