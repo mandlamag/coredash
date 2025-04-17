@@ -37,6 +37,8 @@ services:
     restart: unless-stopped
     networks:
       - ledgercore-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 networks:
   ledgercore-network:

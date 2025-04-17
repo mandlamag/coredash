@@ -97,7 +97,7 @@ export class GraphQLApiService {
       `;
 
       console.time('Connection Verification Duration');
-      const result = await this.client.request(query);
+      const result = await this.client.request(query, {});
       console.timeEnd('Connection Verification Duration');
       
       console.log('Connection successful!', result);
@@ -182,7 +182,7 @@ export class GraphQLApiService {
           }
         `;
         
-        const result = await this.client.request(query);
+        const result = await this.client.request(query, {});
         console.log(`Connection successful with endpoint: ${endpoint}`);
         
         // If successful, update the service to use this endpoint
