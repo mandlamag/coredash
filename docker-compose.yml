@@ -1,50 +1,44 @@
 services:
-  # Frontend service
   ledgercore-dashboard:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "5005:5005"
+      - "5006:5005"
     expose:
       - "5005"
     environment:
-      # API URLs - Use relative paths to leverage NGINX proxy
+      # API URLs - Use absolute URLs to directly connect to the backend
       # These can be overridden with environment variables
-      - GRAPHQL_API_URL=${GRAPHQL_API_URL:-/graphql}
-      - API_URL=${API_URL:-/api}
+      - GRAPHQL_API_URL=${GRAPHQL_API_URL:-http://host.docker.internal:4000/graphql}
+      - API_URL=${API_URL:-http://host.docker.internal:4000/api}
       
       # Neo4j Connection Defaults - These are handled by the backend
       - DEFAULT_NEO4J_DATABASE=${NEO4J_DATABASE:-bitcoin}
+      - ALLOW_QUERIES_WITHOUT_LOGIN=true
       
       # Application Settings
       - DEFAULT_DASHBOARD_TITLE=LedgerCore Dashboard
-      - ALLOW_QUERIES_WITHOUT_LOGIN=true
-      
-      # Branding
+      - DASHBOARD_HEADER_TITLE=LedgerCore Dashboard
+      - DASHBOARD_HEADER_SUBTITLE=Blockchain Analytics
       - DASHBOARD_HEADER_COLOR=#0B297D
-      - DASHBOARD_HEADER_BUTTON_COLOR=#FFFFFF22
       - DASHBOARD_HEADER_TITLE_COLOR=#FFFFFF
     restart: unless-stopped
     networks:
-      - default
-    # This allows the container to find services on the host machine if needed
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - ledgercore-network
 
+  # NGINX service for routing
   nginx:
-    image: nginx:1.25-alpine
-    container_name: ledgercore-nginx
+    image: nginx:alpine
     ports:
       - "80:80"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - ledgercore-dashboard
+    restart: unless-stopped
     networks:
-      - default
+      - ledgercore-network
 
 networks:
-  default:
-    external: true
+  ledgercore-network:
     name: bitcoin-to-neo4jdash_ledgercore-network
+    external: true
