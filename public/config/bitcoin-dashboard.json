@@ -27,8 +27,8 @@
           "refreshRate": 300
         },
         {
-          "title": "Transaction count last 24 hours",
-          "query": "MATCH (t:Transaction)\nWHERE datetime() - duration({hours:24}) <= t.timestamp\nRETURN count(*) AS result\n\n\n",
+          "title": "Transaction count last 72 hours",
+          "query": "MATCH (t:Transaction)\nWHERE datetime() - duration({hours:72}) <= t.timestamp\nRETURN count(*) AS result\n\n\n",
           "width": "3",
           "type": "value",
           "height": "1.25",
@@ -39,8 +39,8 @@
           "refreshRate": 300
         },
         {
-          "title": "Volume flow in million USD last 24 hours",
-          "query": "MATCH (t:Transaction)\nWHERE datetime() - duration({hours:24}) <= t.timestamp\nRETURN sum(t.flowUSD) / 1000000 AS result\n\n\n\n\n\n",
+          "title": "Volume flow in million USD last 72 hours",
+          "query": "MATCH (t:Transaction)\nWHERE datetime() - duration({hours:72}) <= t.timestamp\nRETURN sum(t.flowUSD) / 1000000 AS result\n\n\n\n\n\n",
           "width": "6",
           "type": "value",
           "height": "1.25",
@@ -71,8 +71,8 @@
           "refreshRate": 300
         },
         {
-          "title": "Transaction volume flow in million USD for the last 24 hours",
-          "query": "MATCH (t:Transaction)\nWHERE datetime() - duration({hours:24}) <= t.timestamp\nWITH t.timestamp.year AS year, t.timestamp.day AS day, t.timestamp.month AS month, t.timestamp.hour AS hour, sum(t.flowUSD) AS y\nRETURN datetime({year:year, month:month, day:day, hour:hour}) AS x, y / 1000000\n\n\n\n\n\n",
+          "title": "Transaction volume flow in million USD for the last 72 hours",
+          "query": "MATCH (t:Transaction)\nWHERE datetime() - duration({hours:72}) <= t.timestamp\nWITH t.timestamp.year AS year, t.timestamp.day AS day, t.timestamp.month AS month, t.timestamp.hour AS hour, sum(t.flowUSD) AS y\nRETURN datetime({year:year, month:month, day:day, hour:hour}) AS x, y / 1000000\n\n\n\n\n\n",
           "width": "6",
           "type": "line",
           "height": "3",
@@ -91,8 +91,8 @@
           "refreshRate": 300
         },
         {
-          "title": "Largest transactions by flow within last 24 hours",
-          "query": "MATCH (t:Transaction)\nWHERE datetime() - duration({hours:24}) <= t.timestamp\nRETURN t.hash AS transactionHash, t.flowUSD AS valueInUSD, t.flowBTC AS valueInBTC, t.timestamp AS date\nORDER BY valueInBTC DESC LIMIT 100\n\n",
+          "title": "Largest transactions by flow within last 72 hours",
+          "query": "MATCH (t:Transaction)\nWHERE datetime() - duration({hours:72}) <= t.timestamp\nRETURN t.hash AS transactionHash, t.flowUSD AS valueInUSD, t.flowBTC AS valueInBTC, t.timestamp AS date\nORDER BY valueInBTC DESC LIMIT 100\n\n",
           "width": "6",
           "type": "table",
           "height": "3",
@@ -103,8 +103,8 @@
           "refreshRate": 300
         },
         {
-          "title": "Addresses with the highest incoming flow within last 24 hours",
-          "query": "MATCH (t:Transaction)-[:RECEIVED]->(a:Address)\nWHERE t.timestamp >= datetime() - duration({hours:24})\nOPTIONAL MATCH (t)-[:RECEIVED]->(otherAddress:Address)\nWITH a, sum(t.flowUSD) AS incomingTotal, sum(CASE WHEN otherAddress = a THEN t.flowUSD ELSE 0 END) AS returnedChange\nWITH a, incomingTotal - coalesce(returnedChange, 0.0) AS incomingFlowUSD\nORDER BY incomingFlowUSD DESC\nLIMIT 100\nRETURN a.id AS address, incomingFlowUSD\n\n\n",
+          "title": "Addresses with the highest incoming flow within last 72 hours",
+          "query": "MATCH (t:Transaction)-[:RECEIVED]->(a:Address)\nWHERE t.timestamp >= datetime() - duration({hours:72})\nOPTIONAL MATCH (t)-[:RECEIVED]->(otherAddress:Address)\nWITH a, sum(t.flowUSD) AS incomingTotal, sum(CASE WHEN otherAddress = a THEN t.flowUSD ELSE 0 END) AS returnedChange\nWITH a, incomingTotal - coalesce(returnedChange, 0.0) AS incomingFlowUSD\nORDER BY incomingFlowUSD DESC\nLIMIT 100\nRETURN a.id AS address, incomingFlowUSD\n\n\n",
           "width": "6",
           "type": "table",
           "height": "3",
