@@ -97,6 +97,7 @@ export const loadDashboardThunk = (uuid, text) => (dispatch: any, getState: any)
         dashboard.version,
         VERSION_TO_MIGRATE[dashboard.version]
       );
+      console.log('Dashboard ::::  :: ', dashboard);
       dispatch(setDashboard(upgradedDashboard));
       dispatch(setWelcomeScreenOpen(false));
       dispatch(setDraft(true));
@@ -182,7 +183,7 @@ export const saveDashboardToNeo4jThunk =
         () => {},
         (records) => {
           if (records && records[0] && records[0]._fields && records[0]._fields[0] && records[0]._fields[0] == uuid) {
-            dispatch(createNotificationThunk('🎉 Success!', 'Your current dashboard was saved to Neo4j.'));
+            // dispatch(createNotificationThunk('🎉 Success!', 'Your current dashboard was saved to Neo4j.'));
             onSuccess(uuid);
             if (loggingSettings.loggingMode > '1') {
               dispatch(
@@ -554,6 +555,7 @@ export function patchDashboardVersion(dashboard: any, version: any) {
 }
 
 export function upgradeDashboardVersion(dashboard: any, origin: string, target: string) {
+  console.log('::: upgradeDashboardVersion', dashboard, origin, target);
   if (origin == '2.3' && target == '2.4') {
     dashboard.pages.forEach((p) => {
       p.reports.forEach((r) => {

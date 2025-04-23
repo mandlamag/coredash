@@ -667,12 +667,12 @@ export const loadApplicationConfigThunk = () => async (dispatch: any, getState: 
         );
         dispatch(setDashboard(upgradedDashboard));
         dispatch(setDraft(true));
-        dispatch(
-          createNotificationThunk(
-            'Successfully upgraded dashboard',
-            `Your old dashboard was migrated to version ${upgradedDashboard.version}. You might need to refresh this page and reactivate extensions.`
-          )
-        );
+        // dispatch(
+        //   createNotificationThunk(
+        //     'Successfully upgraded dashboard',
+        //     `Your old dashboard was migrated to version ${upgradedDashboard.version}. You might need to refresh this page and reactivate extensions.`
+        //   )
+        // );
       }
     }
 
