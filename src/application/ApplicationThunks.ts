@@ -667,6 +667,7 @@ export const loadApplicationConfigThunk = () => async (dispatch: any, getState: 
         );
         dispatch(setDashboard(upgradedDashboard));
         dispatch(setDraft(true));
+        // 
         // dispatch(
         //   createNotificationThunk(
         //     'Successfully upgraded dashboard',
