@@ -205,11 +205,11 @@ const ReportCard: React.FC<ReportCardProps> = ({ cardId }) => {
     if (!data && !query) {
         return <div className="text-center text-muted-foreground p-4">No query configured for this card. Edit settings to add a query.</div>;
     }
-    
+
     if (!data && query) {
         return <div className="text-center text-muted-foreground p-4">No data available. <Button variant="link" size="sm" onClick={() => fetchCardData(cardId)}>Fetch data</Button></div>;
     }
-    
+
 
     // --- Chart Rendering (Example for Nivo Bar Chart) ---
     const barSettings = settings?.barChart || {};

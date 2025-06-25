@@ -170,14 +170,14 @@ const handleDragEnd = (event: DragEndEvent) => {
   // Ensure activePageId is present and an item was actually moved over another
   if (activePageId && over && active.id !== over.id) {
     const currentCardOrder = useDashboardStore.getState().cardOrderByPageId[activePageId] || [];
-    
+
     const oldIndex = currentCardOrder.indexOf(active.id as string);
     const newIndex = currentCardOrder.indexOf(over.id as string);
 
     if (oldIndex !== -1 && newIndex !== -1) {
       // Use arrayMove utility from @dnd-kit/sortable for robust reordering
       const newOrder = arrayMove(currentCardOrder, oldIndex, newIndex);
-      
+
       // Call the Zustand action to update the store
       reorderCardsOnPage(activePageId, newOrder);
     }
