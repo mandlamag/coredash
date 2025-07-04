@@ -1,12 +1,14 @@
 import { extractNodePropertiesFromRecords, extractNodeAndRelPropertiesFromRecords } from './ReportRecordProcessing';
 import isEqual from 'lodash.isequal';
-import { getGraphQLApiService } from '../services/GraphQLApiService';
-import { GraphQLApiError } from '../services/GraphQLApiError';
-import { 
-  transformGraphQLResultToNeo4jResult,
-  transformNeo4jParamsToGraphQLParams,
-  transformGraphQLErrorToDisplayError 
-} from '../utils/GraphQLDataTransformUtils';
+// import { getGraphQLApiService } from '../services/GraphQLApiService'; // Will be replaced by Neo4jGraphQLDataSourceService
+import { GraphQLApiError } from '../services/GraphQLApiError'; // Still useful for error type checking if Neo4j service throws it
+// import {
+//   transformGraphQLResultToNeo4jResult, // This logic should now be within or superseded by Neo4jGraphQLDataSourceService
+//   transformNeo4jParamsToGraphQLParams, // This logic should now be within Neo4jGraphQLDataSourceService
+//   transformGraphQLErrorToDisplayError
+// } from '../utils/GraphQLDataTransformUtils';
+import { DataSourceType, Neo4jQueryConfig, QueryResult } from '../core/datasources/types';
+import { Neo4jGraphQLDataSourceService } from '../core/datasources/Neo4jGraphQLDataSourceService';
 
 export enum QueryStatus {
   NO_QUERY, // No query specified
@@ -74,43 +76,56 @@ export async function runCypherQuery(
       return;
     }
 
-    // Check if we have a valid GraphQL API service
-    const graphQLApiService = getGraphQLApiService();
-    
-    if (!graphQLApiService) {
-      setStatus(QueryStatus.ERROR);
-      setRecords([{ error: 'No GraphQL API service found. Are you connected to the GraphQL API?' }]);
-      return;
-    }
-
     // Indicate that the query is running
     setStatus(QueryStatus.RUNNING);
 
     // For usability reasons, we can set a hard cap on the query result size
     // This is handled differently in GraphQL, but we'll maintain the interface for compatibility
+    // This modification of the query string should ideally be part of the QueryConfig or handled by the service.
+    // For now, keeping it here to minimize behavioral changes.
+    let modifiedQuery = query;
     if (useHardRowLimit) {
-      // Modify the query to include a LIMIT clause if it doesn't already have one
-      // This is a simplified approach compared to the Neo4j driver version
-      if (!query.toLowerCase().includes('limit ')) {
-        query = `${query} LIMIT ${rowLimit + 1}`;
+      if (!modifiedQuery.toLowerCase().includes('limit ')) {
+        modifiedQuery = `${modifiedQuery} LIMIT ${rowLimit + 1}`;
       }
     }
 
-    // Transform parameters for GraphQL API
-    const transformedParams = transformNeo4jParamsToGraphQLParams(parameters);
+    // TODO: The long-term plan is to pass dataSourceType and queryConfig directly to this function.
+    // For now, we assume this function is only called for Neo4j/Cypher queries
+    // and construct the Neo4jQueryConfig internally.
+    const neo4jConfig: Neo4jQueryConfig = {
+      dataSourceType: DataSourceType.NEO4J_CYPHER,
+      cypherQuery: modifiedQuery,
+      parameters: parameters, // Neo4jGraphQLDataSourceService will handle parameter transformation
+    };
 
-    // Check for required parameters in the query that might be missing in the parameters
-    // This specifically handles the $input parameter issue
-    if (query.includes('$input') && (!transformedParams.input || transformedParams.input === undefined)) {
-      // Provide a default empty string for the input parameter if it's missing
-      transformedParams.input = '';
+    // Instantiate the Neo4j GraphQL Data Source Service
+    // This service now encapsulates the logic of talking to the GraphQL backend for Cypher queries.
+    const neo4jService = new Neo4jGraphQLDataSourceService();
+
+    // Execute the query using the new data source service
+    const result: QueryResult = await neo4jService.executeQuery(neo4jConfig);
+
+    if (result.error) {
+      // Error handling based on the new QueryResult structure
+      let errorMessage = typeof result.error === 'string' ? result.error : 'An unknown error occurred.';
+      if (typeof result.error === 'object' && (result.error as any).message) {
+        errorMessage = (result.error as any).message;
+      }
+
+      // Specific error type checks if needed (e.g., from GraphQLApiError if re-thrown by service)
+      if (errorMessage.toLowerCase().includes('timeout')) {
+        setStatus(QueryStatus.TIMED_OUT);
+        setRecords([{ error: 'Query execution timed out. Please try a simpler query or increase the timeout limit.' }]);
+      } else {
+        setStatus(QueryStatus.ERROR);
+        setRecords([{ error: errorMessage }]);
+      }
+      console.error('Error executing query via Neo4jGraphQLDataSourceService:', result.error);
+      return errorMessage;
     }
 
-    // Execute the query using the GraphQL API service
-    const result = await graphQLApiService.executeQuery(query, transformedParams);
-
-    // Transform the GraphQL API result to Neo4j driver format
-    const { records, summary } = transformGraphQLResultToNeo4jResult(result);
+    const records = result.records;
 
     if (!records || records.length === 0) {
       setStatus(QueryStatus.NO_DATA);
@@ -119,26 +134,21 @@ export async function runCypherQuery(
     }
 
     if (useReturnValuesAsFields) {
-      // Send a deep copy of the returned record keys as the set of fields
-      const newFields = records && records[0] && records[0].keys ? records[0].keys.slice() : [];
-
+      // Use columns from QueryResult if available, otherwise derive from first record.
+      const newFields = result.columns || (records && records[0] && records[0].keys ? records[0].keys.slice() : []);
       if (!isEqual(newFields, fields)) {
         setFields(newFields);
       }
     } else if (useNodePropsAsFields) {
-      // If we don't use dynamic field mapping, but we do have a selection, use the discovered node properties as fields
       const nodePropsAsFields = extractNodePropertiesFromRecords(records);
-      // Ensure nodePropsAsFields is a string array
       const fieldArray: string[] = Array.isArray(nodePropsAsFields) ? nodePropsAsFields.map(field => String(field)) : [];
       setFields(fieldArray);
     }
 
+    // TODO: Review schema extraction. Neo4jGraphQLDataSourceService could potentially provide richer schema info in QueryResult.metadata
     setSchema(extractNodeAndRelPropertiesFromRecords(records));
 
-    if (records === null) {
-      setStatus(QueryStatus.NO_DRAWABLE_DATA);
-      return;
-    } else if (records.length > rowLimit) {
+    if (records.length > rowLimit) {
       setStatus(QueryStatus.COMPLETE_TRUNCATED);
       setRecords(records.slice(0, rowLimit));
       return;
@@ -147,53 +157,13 @@ export async function runCypherQuery(
     setStatus(QueryStatus.COMPLETE);
     setRecords(records);
   } catch (error: any) {
-    // Convert to GraphQLApiError for structured error handling
-    const graphqlError = error instanceof GraphQLApiError ? error : GraphQLApiError.fromError(error);
-    
-    // Log the error with detailed information
-    console.error('Error executing Cypher query:', {
-      query: query.substring(0, 100) + (query.length > 100 ? '...' : ''),
-      error: graphqlError,
-      statusCode: graphqlError.statusCode,
-      graphQLErrors: graphqlError.graphQLErrors
-    });
-    
-    // Handle timeout errors
-    if (graphqlError.message.includes('timeout') || 
-        (graphqlError.originalError && graphqlError.originalError.message && 
-         graphqlError.originalError.message.includes('timeout'))) {
-      setStatus(QueryStatus.TIMED_OUT);
-      setRecords([{ error: 'Query execution timed out. Please try a simpler query or increase the timeout limit.' }]);
-      return 'Query execution timed out';
-    }
-
-    // Handle other errors
+    // This catch block is now more of a fallback for unexpected errors during the refactoring
+    // or if Neo4jGraphQLDataSourceService itself throws an unhandled exception.
+    // Ideally, Neo4jGraphQLDataSourceService catches its own errors and returns them in QueryResult.error.
+    console.error('Unexpected error in runCypherQuery:', error);
     setStatus(QueryStatus.ERROR);
-    
-    // Get a user-friendly error message
-    const userFriendlyMessage = graphqlError.getUserFriendlyMessage();
-    
-    // Add query-specific context if available
-    let errorMessage = userFriendlyMessage;
-    if (graphqlError.graphQLErrors && graphqlError.graphQLErrors.length > 0) {
-      // If there are GraphQL-specific errors, include them in the message
-      const graphqlErrorMessages = graphqlError.graphQLErrors
-        .map(e => e.message || 'Unknown GraphQL error')
-        .join('; ');
-      
-      // Check if the error is likely a Cypher syntax error
-      if (graphqlErrorMessages.toLowerCase().includes('syntax') || 
-          graphqlErrorMessages.toLowerCase().includes('cypher')) {
-        errorMessage = `Cypher syntax error: ${graphqlErrorMessages}`;
-      } else {
-        errorMessage = `GraphQL API error: ${graphqlErrorMessages}`;
-      }
-    }
-    
-    if (setRecords) {
-      setRecords([{ error: errorMessage }]);
-    }
-    
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+    setRecords([{ error: errorMessage }]);
     return errorMessage;
   }
 }

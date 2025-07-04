@@ -38,6 +38,15 @@ export const updateCypherParameters = (pagenumber: number, id: number, parameter
   payload: { pagenumber, id, parameters },
 });
 
+import { QueryConfig } from '../../core/datasources/types';
+
+// Action to update the entire query configuration for a card
+export const UPDATE_QUERY_CONFIG = 'PAGE/CARD/UPDATE_QUERY_CONFIG';
+export const updateQueryConfig = (pagenumber: number, id: number, queryConfig: QueryConfig) => ({
+  type: UPDATE_QUERY_CONFIG,
+  payload: { pagenumber, id, queryConfig },
+});
+
 export const UPDATE_REPORT_TYPE = 'PAGE/CARD/UPDATE_REPORT_TYPE';
 export const updateReportType = (pagenumber: number, id: number, type: any) => ({
   type: UPDATE_REPORT_TYPE,

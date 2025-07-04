@@ -3,11 +3,12 @@ import {
   HARD_RESET_CARD_SETTINGS,
   TOGGLE_REPORT_SETTINGS,
   UPDATE_ALL_SELECTIONS,
-  UPDATE_CYPHER_PARAMETERS,
+  UPDATE_CYPHER_PARAMETERS, // This will likely be adapted or deprecated in favor of UPDATE_QUERY_CONFIG
   UPDATE_FIELDS,
   UPDATE_SCHEMA,
-  UPDATE_REPORT_QUERY,
+  UPDATE_REPORT_QUERY, // Will be adapted to modify queryConfig
   UPDATE_REPORT_SETTING,
+  UPDATE_QUERY_CONFIG, // New action to handle generic query config updates
   UPDATE_REPORT_SIZE,
   UPDATE_REPORT_TITLE,
   UPDATE_REPORT_TYPE,
@@ -16,17 +17,43 @@ import {
 } from './CardActions';
 import { TOGGLE_CARD_SETTINGS } from './CardActions';
 import { createUUID } from '../utils/uuid';
+import { DataSourceType, Neo4jQueryConfig, QueryConfig } from '../../core/datasources/types';
 
-const update = (state, mutations) => Object.assign({}, state, mutations);
+const update = (state: any, mutations: any) => Object.assign({}, state, mutations);
 
 /**
  * State reducers for a single card instance as part of a report.
  */
 
-export const CARD_INITIAL_STATE = {
+export const CARD_INITIAL_STATE: {
+  id: string;
+  title: string;
+  // query: string; // Deprecated: Replaced by queryConfig
+  // parameters?: Record<string, any>; // Deprecated: Moved into queryConfig
+  dataSourceType: DataSourceType;
+  queryConfig: QueryConfig;
+  settingsOpen: boolean;
+  advancedSettingsOpen: boolean;
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+  type: string; // Report type (e.g., 'table', 'bar')
+  fields: any[]; // TODO: Define a proper type for fields
+  selection: Record<string, any>; // TODO: Define a proper type for selection
+  settings: Record<string, any>; // Report-specific settings
+  collapseTimeout: string | number;
+  database?: string; // Optional: database name for the query
+  schema?: any; // Optional: schema information
+} = {
   id: createUUID(),
   title: '',
-  query: '\n\n\n',
+  dataSourceType: DataSourceType.NEO4J_CYPHER,
+  queryConfig: {
+    dataSourceType: DataSourceType.NEO4J_CYPHER,
+    cypherQuery: '\n\n\n',
+    parameters: {},
+  } as Neo4jQueryConfig,
   settingsOpen: false,
   advancedSettingsOpen: false,
   width: 3,
@@ -50,23 +77,38 @@ export const cardReducer = (state = CARD_INITIAL_STATE, action: { type: any; pay
   switch (type) {
     case UPDATE_REPORT_TITLE: {
       const { title } = payload;
-      state = update(state, { title: title });
-      return state;
+      return update(state, { title: title });
     }
     case UPDATE_REPORT_SIZE: {
       const { width, height } = payload;
-      state = update(state, { width: width, height: height });
-      return state;
+      return update(state, { width: width, height: height });
     }
-    case UPDATE_REPORT_QUERY: {
+    case UPDATE_REPORT_QUERY: { // Adapting for Neo4jQueryConfig
       const { query } = payload;
-      state = update(state, { query: query });
-      return state;
+      if (state.queryConfig.dataSourceType === DataSourceType.NEO4J_CYPHER) {
+        const newQueryConfig = {
+          ...state.queryConfig,
+          cypherQuery: query,
+        } as Neo4jQueryConfig;
+        return update(state, { queryConfig: newQueryConfig });
+      }
+      return state; // Or handle error/log if type mismatch
     }
-    case UPDATE_CYPHER_PARAMETERS: {
+    case UPDATE_CYPHER_PARAMETERS: { // Adapting for Neo4jQueryConfig
       const { parameters } = payload;
-      state = update(state, { parameters: parameters });
-      return state;
+      if (state.queryConfig.dataSourceType === DataSourceType.NEO4J_CYPHER) {
+        const newQueryConfig = {
+          ...state.queryConfig,
+          parameters: parameters,
+        } as Neo4jQueryConfig;
+        return update(state, { queryConfig: newQueryConfig });
+      }
+      return state; // Or handle error/log if type mismatch
+    }
+    case UPDATE_QUERY_CONFIG: { // Generic way to update the whole queryConfig
+      const { queryConfig } = payload;
+      // Potentially add validation here to ensure queryConfig matches state.dataSourceType
+      return update(state, { queryConfig: queryConfig, dataSourceType: queryConfig.dataSourceType });
     }
     case UPDATE_FIELDS: {
       const { fields } = payload;
